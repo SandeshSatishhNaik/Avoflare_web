@@ -1,0 +1,42 @@
+---
+// Altitude and mission phases of the simulated 2 h mission.
+import mission from '../data/mission.json';
+const W = 720, H = 220, P = { l: 52, r: 16, t: 26, b: 34 };
+const s = mission.samples;
+const T = s.at(-1)!.t, YM = 4500;
+const x = (t: number) => P.l + (t / T) * (W - P.l - P.r);
+const y = (v: number) => P.t + (1 - v / YM) * (H - P.t - P.b);
+const d = s.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.alt ?? 0).toFixed(1)}`).join('');
+const phases: { name: string; t0: number; t1: number }[] = [];
+for (const p of s) {
+  const last = phases.at(-1);
+  if (!last || last.name !== p.phase) phases.push({ name: p.phase, t0: p.t, t1: p.t });
+  else last.t1 = p.t;
+}
+---
+<figure class="static-chart">
+  <figcaption>Altitude over the simulated 2 h mission <span class="muted">(m)</span></figcaption>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Mission phases: ${phases.map(p => p.name.toLowerCase()).join(', ')}. Peak altitude 4000 m.`}>
+    {[0, 1500, 3000, 4500].map(v => (
+      <g><line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} class="g" /><text x={P.l - 8} y={y(v) + 4} class="a" text-anchor="end">{v}</text></g>
+    ))}
+    {phases.map((p, i) => (
+      <g>
+        {i > 0 && <line x1={x(p.t0)} x2={x(p.t0)} y1={P.t} y2={H - P.b} class="ph" />}
+        {(p.t1 - p.t0) > 500 && <text x={(x(p.t0) + x(p.t1)) / 2} y={P.t - 8} class="a" text-anchor="middle">{p.name.toLowerCase()}</text>}
+      </g>
+    ))}
+    <path d={d} fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linejoin="round" />
+    {[0, 1800, 3600, 5400, 7200].map(t => (
+      <text x={x(t)} y={H - 10} class="a" text-anchor="middle">{`${String(Math.floor(t / 3600)).padStart(2, '0')}:${String((t % 3600) / 60).padStart(2, '0')}`}</text>
+    ))}
+  </svg>
+</figure>
+<style>
+  .static-chart { margin: 0; }
+  .static-chart figcaption { font-size: 0.95rem; color: var(--ink-2); margin-bottom: var(--s-3); }
+  .static-chart svg { width: 100%; height: auto; }
+  .g { stroke: var(--line); }
+  .ph { stroke: var(--line-strong); stroke-dasharray: 2 4; }
+  .a { fill: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+</style>

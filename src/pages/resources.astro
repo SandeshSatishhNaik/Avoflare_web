@@ -1,0 +1,70 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Icon from '../components/Icon.astro';
+import { glossary } from '../data/site.js';
+
+const docs = [
+  ['ETPR and Edge AI technical architecture', 'Aircraft-side telemetry, the CanonicalTelemetryState interface, the Edge AI chain and communication-loss operation.'],
+  ['GCS AI detailed system architecture', 'The Operational System, EIR, Sentinel, data and model lifecycle, and end-to-end engineering scenarios.'],
+  ['Problem Statement 26054', 'The requirements this project answers.'],
+];
+const team = [1, 2, 3, 4];
+---
+<Base title="Resources" description="AVOFLARE architecture documents, simulation repository, glossary of terms, and the team behind the project.">
+  <PageHead title="Documents, code and people" lead="Everything behind this site: the architecture documents, the simulation code, the terms we use, and the team." />
+
+  <section class="section">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">Source material</h2>
+      </div>
+      <ul class="res">
+        <li>
+          <a href="https://github.com/abhishekpj0902-apj/AVOFLARE_MATLAB" rel="noopener"><Icon name="github-logo" /><span><strong>AVOFLARE_MATLAB on GitHub</strong><span>The MATLAB/Simulink simulation: engine physics, missions, fault library, CAN package, datasets and the dashboard app.</span></span></a>
+        </li>
+        {docs.map(([t, d]) => (
+          <li><div class="res-doc"><Icon name="file-text" /><span><strong>{t}</strong><span>{d}</span><span class="muted">PDF download to be added.</span></span></div></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="glossary">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">Glossary</h2>
+      <dl class="gloss">
+        {Object.entries(glossary).map(([k, v]) => <div><dt class="num">{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="team">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">Team</h2>
+      <p class="lead">Team details are being added.</p>
+      <ul class="team" aria-label="Team members (to be added)">
+        {team.map(n => <li><span class="avatar" aria-hidden="true"></span><strong>Team member {n}</strong><span class="muted">Role to be added</span></li>)}
+      </ul>
+      <p class="muted">Institute, mentor and contact details will appear here.</p>
+    </div>
+  </section>
+</Base>
+<style>
+  .res { list-style: none; border-top: 1px solid var(--line); }
+  .res li { border-bottom: 1px solid var(--line); }
+  .res a, .res-doc { display: grid; grid-template-columns: 28px 1fr; gap: var(--s-4); padding: var(--s-5) 0; text-decoration: none; }
+  .res :global(svg) { width: 26px; height: 26px; color: var(--ink-2); }
+  .res strong { display: block; font-size: var(--step-1); font-weight: 600; }
+  .res span span { display: block; color: var(--ink-2); margin-top: 0.2rem; }
+  .res a:hover strong { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+  .gloss { display: grid; gap: 0 var(--s-8); margin: 0; }
+  @media (min-width: 860px) { .gloss { grid-template-columns: 1fr 1fr; } }
+  .gloss div { display: grid; grid-template-columns: 10rem 1fr; gap: var(--s-4); padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .gloss dt { font-size: 0.82rem; color: var(--accent); padding-top: 0.15rem; }
+  .gloss dd { margin: 0; color: var(--ink-2); font-size: 0.94rem; }
+  @media (max-width: 560px) { .gloss div { grid-template-columns: 1fr; gap: 0.2rem; } }
+  .team { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: var(--s-5); }
+  .team li { display: flex; flex-direction: column; gap: 0.2rem; }
+  .avatar { width: 100%; aspect-ratio: 1; border: 1px dashed var(--line-strong); margin-bottom: var(--s-3); background: var(--surface); }
+</style>

@@ -1,0 +1,90 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Stamp from '../components/Stamp.astro';
+import TrendChart from '../components/TrendChart.astro';
+import ProfileChart from '../components/ProfileChart.astro';
+import EngineTwin from '../components/islands/EngineTwin.jsx';
+import { SENSORS } from '../components/islands/sensors.js';
+import { missions } from '../data/site.js';
+
+const modules = [
+  ['Environment and mission', 'ISA atmosphere, ambient pressure, temperature and density; mission, altitude, airspeed and throttle profiles.', 'impl'],
+  ['Air intake and turbocharger', 'Air filter, compressor, intercooler, boost.', 'impl'],
+  ['Fuel system and combustion', 'Fuel flow and pressure, air-fuel ratio, combustion efficiency, IMEP and BMEP.', 'impl'],
+  ['Mechanical core', 'Friction, brake power and torque, crank speed.', 'impl'],
+  ['Propulsion integration', 'Gearbox and propeller: thrust and power coefficients, advance ratio, efficiency.', 'impl'],
+  ['Aircraft environment and flight control', 'Aircraft-level forces and control inputs that load the engine.', 'impl'],
+  ['Healthy reference run', 'The same mission flown without the fault, stored beside every faulted run so each point has an expected value.', 'impl'],
+  ['Remaining useful life', 'Left empty on purpose until a validated lifetime model exists.', 'design'],
+] as const;
+---
+<Base title="Digital twin" theme="dark" description="The AVOFLARE engine simulation: physics subsystems, ten mission profiles including high altitude, hot, cold and endurance, and how divergence from the healthy twin grows with wear.">
+  <PageHead title="A twin you can fly on any mission" lead="Our MATLAB/Simulink model simulates the engine from intake to propeller, flies it through ten mission profiles, and can inject any of 52 faults. Every faulted run has a healthy twin beside it, so a difference is always measurable." />
+
+  <section class="section">
+    <div class="wrap split twin-split">
+      <div class="stack">
+        <EngineTwin client:visible interactive lineMix={0.35} label="Representative engine model. Drag to rotate." />
+        <p class="sim-label">Representative engine model, not the TAPAS engine. Sensor points are approximate. Drag to rotate.</p>
+      </div>
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-2)">Where the sensors sit</h2>
+        <ul class="legend">
+          {SENSORS.map(s => <li><span class="num tag">{s.label}</span>{s.name}</li>)}
+        </ul>
+        <p class="muted">Points turn amber, then orange, when their reading drifts from the twin. On this page they show the healthy state; the <a href="/demo/">replay</a> shows them during the fault.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">What the model covers</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Subsystem</th><th>What it computes</th><th>Status</th></tr></thead>
+          <tbody>{modules.map(([a, b, c]) => <tr><td>{a}</td><td>{b}</td><td><Stamp status={c} /></td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="missions">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">Ten missions, four stress cases</h2>
+        <p class="lead">Requirement E asks for high altitude, endurance, hot weather and rapid throttle changes. M03, M10 and M09 cover the first three; every profile steps the throttle between phases.</p>
+        <ProfileChart />
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>ID</th><th>Mission</th><th>Type</th></tr></thead>
+          <tbody>{missions.map(([id, n, t]) => <tr class={['M03', 'M08', 'M09', 'M10'].includes(id) ? 'hl' : ''}><td class="num">{id}</td><td>{n}</td><td>{t}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="trend">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">Wear shows up as divergence</h2>
+        <p class="lead">The same 2 h mission at 10, 40 and 50 % compressor wear. The harder the wear, the further exhaust gas temperature pulls away from the healthy twin. That trend is what prognostics will extrapolate.</p>
+        <p class="muted">Some channels are not shown yet: in the current runs the healthy reference for torque and brake power is zero and boost pressure does not respond to compressor wear. We publish them once the simulation is fixed.</p>
+      </div>
+      <TrendChart />
+    </div>
+  </section>
+
+  <div class="wrap"><a class="next-link" href="/whats-new/"><span>Next</span><strong>What's new</strong></a></div>
+</Base>
+<style>
+  .twin-split { align-items: center; }
+  @media (min-width: 960px) { .twin-split { grid-template-columns: 7fr 5fr; } }
+  .legend { list-style: none; border-top: 1px solid var(--line); }
+  .legend li { display: grid; grid-template-columns: 4.5rem 1fr; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }
+  .tag { color: var(--accent); font-size: 0.74rem; align-self: center; }
+  tr.hl td { color: var(--ink); font-weight: 600; }
+  tr:not(.hl) td { color: var(--ink-2); }
+</style>

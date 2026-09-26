@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Stamp from '../components/Stamp.astro';
+
+const phases = [
+  ['Simulation', 'Engine physics, missions, fault library, CAN layer, healthy-reference datasets, MATLAB dashboard.', 'impl', 'Now'],
+  ['Fix and validate the simulation', 'Resolve the known data issues; validate physics against VRDE 180 HP and AE300 reference data.', 'design', 'Next'],
+  ['AI on simulated data', 'Build ETPR as a runtime and train the Edge AI chain on labelled runs; measure detection per fault class.', 'design', 'Next'],
+  ['Hardware in the loop', 'Run ETPR and the Edge AI on an edge computer fed by a CAN interface and the simulator.', 'design', 'Later'],
+  ['Engine test rig', 'Connect to a real engine\'s ECU/FADEC and sensors; compare the twin with measured behaviour.', 'design', 'Later'],
+  ['Ground control station', 'Integrate GCS AI, EIR and Sentinel with an operational ground station.', 'design', 'Later'],
+  ['Fleet health', 'Aircraft history and pattern memory across a fleet.', 'design', 'Later'],
+] as const;
+
+const future = [
+  ['Injection timing signal', 'Requirement B asks for injection timing parameters; today only an ignition-timing-drift fault exists.'],
+  ['Vibration signature', 'Replace the single vibration level with a spectrum that separates imbalance, misfire and mount faults.'],
+  ['Battery and alternator health index', 'Turn voltage and current into a health indicator.'],
+  ['Secure telemetry', 'Authentication and integrity for the downlink. Not yet designed.'],
+  ['Federated learning', 'Learn across aircraft without pooling raw data. Not yet designed.'],
+];
+---
+<Base title="Roadmap" description="From simulation to test rig to ground station: the AVOFLARE roadmap and the future work it still needs.">
+  <PageHead title="From simulation to a real engine" lead="We are at the first step: a working simulation that produces labelled, realistic data. Each next step replaces one simulated piece with a real one." />
+
+  <section class="section">
+    <div class="wrap">
+      <h2 class="visually-hidden">Phases</h2>
+      <ol class="phases">
+        {phases.map(([n, d, s, when], i) => (
+          <li class={s === 'impl' ? 'done' : ''}>
+            <span class="when num">{when}</span>
+            <div>
+              <h3>{n}</h3>
+              <p>{d}</p>
+            </div>
+            <Stamp status={s} />
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">Future work</h2>
+        <p class="lead">Gaps against the problem statement that we have not closed yet.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Item</th><th>Why</th></tr></thead>
+          <tbody>{future.map(([a, b]) => <tr><td>{a}</td><td>{b}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><a class="next-link" href="/resources/"><span>Next</span><strong>Resources and team</strong></a></div>
+</Base>
+<style>
+  .phases { list-style: none; position: relative; }
+  .phases li { display: grid; grid-template-columns: 5rem 1fr auto; gap: var(--s-5); align-items: start; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+  .phases li:first-child { border-top: 1px solid var(--line); }
+  .phases h3 { font-size: var(--step-1); font-stretch: var(--wide); font-weight: 560; margin-bottom: var(--s-2); }
+  .phases p { color: var(--ink-2); max-width: 60ch; }
+  .when { font-size: 0.78rem; color: var(--ink-3); padding-top: 0.3rem; }
+  .phases li.done .when { color: var(--ok-ink); }
+  @media (max-width: 640px) { .phases li { grid-template-columns: 1fr; gap: var(--s-2); } }
+</style>

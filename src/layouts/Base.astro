@@ -1,0 +1,36 @@
+---
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/martian-mono/wdth.css';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props { title: string; description: string; theme?: 'dark' | 'light' }
+const { title, description, theme = 'light' } = Astro.props;
+const fullTitle = title === 'AVOFLARE' ? 'AVOFLARE · Engine digital twin for MALE UAVs' : `${title} · AVOFLARE`;
+---
+<!doctype html>
+<html lang="en" data-theme={theme}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={theme === 'dark' ? '#0a1a36' : '#eef2f5'} />
+    <link rel="icon" type="image/png" href="/brand/mark-128.png" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/media/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header theme={theme} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer theme={theme} />
+  </body>
+</html>

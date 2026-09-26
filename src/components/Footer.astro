@@ -1,0 +1,20 @@
+---
+import { nav } from '../data/site.js';
+interface Props { theme: 'dark' | 'light' }
+const { theme } = Astro.props;
+---
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="stack">
+      <img src={theme === 'dark' ? '/brand/logo-on-dark.png' : '/brand/logo-on-light.png'} alt="AVOFLARE" width="180" height="110" style="width:180px;height:auto" />
+      <p>An engine digital twin and engineering-intelligence system for the aero piston engine of a MALE UAV, built for Problem Statement 26054.</p>
+      <p>Charts use simulated data from the TAPAS MATLAB/Simulink model. Steps marked "Designed" describe the architecture, not a running system.</p>
+    </div>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="/">Home</a></li>
+        {nav.map(n => <li><a href={n.href}>{n.label}</a></li>)}
+      </ul>
+    </nav>
+  </div>
+</footer>

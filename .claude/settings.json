@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sed -n '/^## Communication mode/,$p' \"$CLAUDE_PROJECT_DIR/CLAUDE.md\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+---
+import { glossary } from '../data/site.js';
+interface Props { t: keyof typeof glossary | string; label?: string }
+const { t, label } = Astro.props;
+const def = (glossary as Record<string, string>)[t];
+const id = `term-${String(t).replace(/[^a-z0-9]/gi, '')}-${Math.random().toString(36).slice(2, 7)}`;
+---
+{def ? (
+  <span class="term" tabindex="0" aria-describedby={id}>{label ?? t}<span class="term-tip" role="tooltip" id={id}>{def}</span></span>
+) : (<span>{label ?? t}</span>)}

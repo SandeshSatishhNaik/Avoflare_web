@@ -1,0 +1,68 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Stamp from '../components/Stamp.astro';
+import Term from '../components/Term.astro';
+import DivergenceChart from '../components/islands/DivergenceChart.jsx';
+import RoleSwitch from '../components/islands/RoleSwitch.jsx';
+import mission from '../data/mission.json';
+
+const peak = Math.max(...mission.samples.map(s => s.dEgt ?? 0)).toFixed(1);
+const flow = [
+  ['Sensor data', 'EGT and CHT arrive through ETPR as part of the canonical state.'],
+  ['CAM', 'The current model of this aircraft sets the operating context: altitude, phase, throttle.'],
+  ['BDI', `EGT runs up to ${peak} °C above the twin after one hour: a sustained trend deviation, not a spike.`],
+  ['Causal reasoning', 'Candidate causes consistent with hotter exhaust and cooler heads: compressor wear, intake restriction.'],
+  ['Evidence competition', 'Each cause is scored against the evidence it predicts; none is forced to win.'],
+  ['World model', 'Plays the engine forward under "continue", "reduce power" and "return".'],
+  ['Prognostics', 'Estimates how fast the divergence grows with wear.'],
+  ['PPM', 'Proposes an inspection and a maintenance window.'],
+  ['Decision engine', 'Checks the proposal against operational and maintenance constraints.'],
+  ['Engineer', 'Reviews the case and signs, or sends it back.'],
+];
+---
+<Base title="Fault response" theme="dark" description="One simulated fault, turbocharger compressor wear, followed from divergence to the engineer's decision, as seen by the operator, the propulsion engineer and maintenance.">
+  <PageHead title="One fault, from first sign to signature" lead="A simulated turbocharger compressor wears during a two-hour mission. This is how AVOFLARE is designed to carry it from a small temperature drift to a signed maintenance decision." />
+
+  <section class="section">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">What the data shows</h2>
+        <p class="lead">Exhaust gas temperature against the healthy twin, over the whole mission. The fault starts at one hour; the divergence builds over the next half hour, holds, and climbs again late in the mission.</p>
+        <p class="sim-label">Simulated: TAPAS V4 run, turbocharger compressor wear 50 %, 2 h mission</p>
+      </div>
+      <DivergenceChart client:visible />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">How the ground chain handles it</h2>
+        <p><Stamp status="design" /></p>
+        <p class="muted">Scenario B of the GCS AI architecture, filled with this run.</p>
+      </div>
+      <ol class="flow">
+        {flow.map(([a, b]) => <li><strong>{['CAM', 'BDI', 'PPM'].includes(a) ? <Term t={a} /> : a}</strong><span>{b}</span></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">Same fault, three views</h2>
+      <p class="lead">Each role needs a different slice of the case. Switch between them.</p>
+      <RoleSwitch client:visible />
+    </div>
+  </section>
+
+  <div class="wrap"><a class="next-link" href="/demo/"><span>Next</span><strong>Replay the mission</strong></a></div>
+</Base>
+<style>
+  .flow { list-style: none; counter-reset: f; border-top: 1px solid var(--line); }
+  .flow li { display: grid; grid-template-columns: 2.5rem minmax(9rem, 13rem) 1fr; gap: var(--s-4); padding: var(--s-3) 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .flow li::before { counter-increment: f; content: counter(f, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-3); }
+  .flow li:last-child strong { color: var(--watch-ink); }
+  .flow span { color: var(--ink-2); }
+  @media (max-width: 640px) { .flow li { grid-template-columns: 2rem 1fr; } .flow span { grid-column: 2; } }
+</style>

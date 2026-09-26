@@ -1,0 +1,76 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Stamp from '../components/Stamp.astro';
+import Term from '../components/Term.astro';
+import LinkLoss from '../components/islands/LinkLoss.jsx';
+
+const areas = [
+  ['Physics-informed AI', 'PINN / Lite Digital Twin on board; hybrid physics and data models on the ground.', 'design'],
+  ['Edge AI for UAV applications', 'The full ETPR → Edge AI → Safety chain runs on the aircraft.', 'design'],
+  ['Lightweight onboard analytics', 'Deterministic ETPR does the heavy lifting before any model runs.', 'design'],
+  ['Hybrid thermodynamic + data-driven models', 'Physics simulation with healthy reference runs, plus learned stages.', 'partial'],
+  ['Explainable AI for fault diagnosis', 'Evidence Competition keeps causes and their evidence visible; Confidence states the limits.', 'design'],
+  ['Autonomous maintenance advisory', 'PPM and Decision Engine propose; the engineer approves.', 'design'],
+  ['Secure telemetry architecture', 'Not yet designed. On the roadmap.', 'gap'],
+  ['Federated learning', 'Not yet designed. On the roadmap for fleet-level learning.', 'gap'],
+] as const;
+---
+<Base title="What's new" theme="dark" description="What sets AVOFLARE apart: the aircraft keeps detecting faults when the downlink is lost, reasoning stays explainable, and the engineer keeps final authority.">
+  <PageHead title="The aircraft does not wait for the ground" lead="Most monitoring streams data down and waits for an answer. AVOFLARE decides on board first, so losing the link costs you the ground's extra depth, never the aircraft's own judgement." />
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">Cut the link and see</h2>
+      <p class="lead">Press the button. The aircraft side keeps processing frames and stores what it would have sent; when the link returns, the ground catches up.</p>
+      <div class="ll-frame"><LinkLoss client:visible /></div>
+      <p class="muted">Behaviour as designed in the ETPR and Edge AI architecture: <Stamp status="design" />. The frame counter is illustrative.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <ol class="ideas">
+        <li>
+          <h3 class="display">Communication-independent edge</h3>
+          <p>ETPR and the Edge AI always run on the aircraft. When the link is down, the execution location of the AI changes; the telemetry interpretation does not. There is no second, degraded pipeline.</p>
+        </li>
+        <li>
+          <h3 class="display">Divergence, not thresholds</h3>
+          <p>Every reading is compared with the healthy twin under the same conditions. <Term t="BDI" /> flags a trend long before a fixed alarm limit would, and it separates what changed from why.</p>
+        </li>
+        <li>
+          <h3 class="display">Explainable by construction</h3>
+          <p>Causal reasoning proposes candidate causes; Evidence Competition weighs them with no forced winner; Confidence says what the result cannot claim. The engineer reads a chain of evidence, not a score.</p>
+        </li>
+        <li>
+          <h3 class="display">The engineer signs</h3>
+          <p>The platform prepares the engineering case. Decisions that touch flight safety, configuration or maintenance release stay with a person, and every decision is recorded with its evidence.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack">
+      <h2 class="display" style="font-size:var(--step-3)">Innovation areas in the problem statement</h2>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Area</th><th>How AVOFLARE addresses it</th><th>Status</th></tr></thead>
+          <tbody>{areas.map(([a, b, c]) => <tr><td>{a}</td><td>{b}</td><td><Stamp status={c} /></td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap"><a class="next-link" href="/fault-response/"><span>Next</span><strong>Fault response</strong></a></div>
+</Base>
+<style>
+  .ll-frame { border: 1px solid var(--line-strong); background: var(--bg-deep); padding: var(--s-4); }
+  .ideas { list-style: none; display: grid; gap: var(--s-7) var(--s-8); }
+  @media (min-width: 860px) { .ideas { grid-template-columns: 1fr 1fr; } }
+  .ideas li { border-top: 2px solid var(--accent); padding-top: var(--s-4); }
+  .ideas li:first-child { border-top-color: var(--watch); }
+  .ideas h3 { font-size: var(--step-2); margin-bottom: var(--s-3); }
+  .ideas p { color: var(--ink-2); max-width: 52ch; }
+</style>

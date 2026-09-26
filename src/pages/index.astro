@@ -1,0 +1,94 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Stamp from '../components/Stamp.astro';
+import MissionFilm from '../components/islands/MissionFilm.jsx';
+
+const next = [
+  ['/problem/', 'Problem', 'Problem Statement 26054, and where each requirement is covered.'],
+  ['/how-it-works/', 'How it works', 'The aircraft chain and the ground chain, stage by stage.'],
+  ['/digital-twin/', 'Digital twin', 'The engine model, ten mission profiles and the degradation trend.'],
+  ['/whats-new/', "What's new", 'Cut the downlink and watch the aircraft carry on.'],
+  ['/fault-response/', 'Fault response', 'One fault, seen by the operator, the engineer and maintenance.'],
+  ['/demo/', 'Demo', 'Replay the two-hour mission and scrub through the fault.'],
+  ['/validation/', 'Validation', 'What has been checked, what has not, and the plan.'],
+];
+---
+<Base title="AVOFLARE" theme="dark" description="AVOFLARE is an engine digital twin for the aero piston engine of a MALE UAV: on-board fault detection that survives a lost link, and a ground chain that builds the engineer's case.">
+  <link slot="head" rel="preload" as="image" href="/media/uav-runway.webp" fetchpriority="high" />
+  <section class="hero" aria-labelledby="hero-title">
+    <img class="hero-img" src="/media/uav-runway.webp" alt="" width="1376" height="768" fetchpriority="high" decoding="async" />
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <h1 id="hero-title" class="display">Engine health that survives a lost link.</h1>
+      <p class="hero-sub">A digital twin for a MALE UAV's piston engine: it catches faults on board and builds the engineer's case on the ground.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#film"><Icon name="arrow-down" />Watch the mission</a>
+        <a class="btn" href="/demo/">Open the replay</a>
+      </div>
+      <p class="hero-meta">Problem Statement 26054 · aero piston engines in MALE UAVs</p>
+    </div>
+    <p class="hero-note">Illustration: AI-generated UAV. Data on this site: simulated.</p>
+  </section>
+
+  <MissionFilm client:visible />
+
+  <section class="section">
+    <div class="wrap split">
+      <div class="stack">
+        <h2 class="display" style="font-size:var(--step-3)">What runs today, and what is designed.</h2>
+        <p class="lead">Everything the film shows is labelled. The engine simulation and its data are real; the AI chains are the architecture we are building.</p>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>Part</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Engine physics simulation (MATLAB/Simulink)</td><td><Stamp status="impl" /></td></tr>
+            <tr><td>52-type fault library, 10 mission profiles</td><td><Stamp status="impl" /></td></tr>
+            <tr><td>CAN encoding and decoding, 17 message IDs</td><td><Stamp status="impl" /></td></tr>
+            <tr><td>Healthy-reference runs and divergence data</td><td><Stamp status="impl" /></td></tr>
+            <tr><td>MATLAB dashboard and browser replay</td><td><Stamp status="impl" /></td></tr>
+            <tr><td>ETPR runtime and Edge AI chain</td><td><Stamp status="design" /></td></tr>
+            <tr><td>GCS AI, EIR and Sentinel</td><td><Stamp status="design" /></td></tr>
+            <tr><td>Remaining useful life, health indices</td><td><Stamp status="design" /></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2 class="display" style="font-size:var(--step-3)">Go deeper</h2>
+      <ul class="index-list">
+        {next.map(([href, title, text]) => (
+          <li><a href={href}><strong>{title}</strong><span>{text}</span><Icon name="arrow-right" /></a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { position: relative; min-height: calc(100dvh - var(--nav-h)); display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; }
+  .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; z-index: -2; animation: hero-drift 24s var(--ease-out) both; }
+  @keyframes hero-drift { from { transform: scale(1.08); } to { transform: scale(1); } }
+  .hero-note { position: absolute; right: var(--gutter); bottom: var(--s-4); font-size: 0.78rem; color: var(--ink-3); }
+  .hero-scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,26,54,.25) 0%, rgba(10,26,54,.35) 45%, rgba(5,13,28,.92) 100%), linear-gradient(90deg, rgba(5,13,28,.7) 0%, transparent 60%); }
+  .hero-inner { padding-block: var(--s-8) clamp(2.5rem, 2rem + 4vh, 5rem); display: grid; gap: var(--s-5); justify-items: start; }
+
+  .hero h1 { font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4.6rem); max-width: 16ch; }
+  .hero-sub { font-size: var(--step-1); color: var(--ink-2); max-width: 44ch; line-height: 1.45; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  .hero-meta { font-size: 0.86rem; color: var(--ink-3); }
+  @media (prefers-reduced-motion: reduce) { .hero-img { animation: none; } }
+  @media (max-width: 700px) { .hero-note { position: static; padding: 0 var(--gutter) var(--s-4); } .hero { flex-direction: column; align-items: stretch; justify-content: flex-end; } }
+  .index-list { list-style: none; margin-top: var(--s-6); border-top: 1px solid var(--line); }
+  .index-list a { display: grid; grid-template-columns: minmax(10rem, 16rem) 1fr auto; gap: var(--s-5); align-items: center; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); text-decoration: none; }
+  .index-list strong { font-size: var(--step-1); font-stretch: var(--wide); font-weight: 560; }
+  .index-list span { color: var(--ink-2); }
+  .index-list :global(svg) { width: 22px; height: 22px; color: var(--ink-3); transition: transform 200ms var(--ease-out), color 200ms; }
+  .index-list a:hover :global(svg) { transform: translateX(4px); color: var(--ink); }
+  .index-list a:hover strong { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+  @media (max-width: 700px) { .index-list a { grid-template-columns: 1fr auto; } .index-list span { grid-column: 1; } .index-list :global(svg) { grid-row: 1 / span 2; grid-column: 2; } }
+</style>

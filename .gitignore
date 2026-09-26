@@ -1,0 +1,8 @@
+graphify-out/
+node_modules/
+dist/
+.astro/
+.playwright-mcp/
+.impeccable/review/
+*_white_mesh*.glb
+tapas_himalayan_runway_cinematic.mp4
