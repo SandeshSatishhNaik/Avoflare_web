@@ -29,7 +29,7 @@ Use the terminology from these documents exactly (ETPR, CanonicalTelemetryState,
 
 ## Commands
 
-- `cd site && npm run dev` — React site dev server (Vite). `npm run build` builds to `site/dist` (Cloudflare Pages: root `site`, build `npm run build`, output `dist`). Media come from the shared `../public` folder.
+- `npm run dev` / `npm run build` (repo root) — dev server / build of the React site in `site/`; the root build writes `dist/`. Live at https://avoflare-web.pages.dev (Cloudflare Pages project `avoflare-web`, Git-connected; manual deploy: `npx wrangler pages deploy dist --project-name avoflare-web --branch main`). Images and videos are served from the R2 bucket `avoflare` (public URL https://pub-dead812eb1de4654a9d56f298fda8604.r2.dev, path `media/...`); Pages builds rewrite `/media/` to it (`site/vite.config.js`). New media: upload with `npx wrangler r2 object put avoflare/media/<path> --file public/media/<path> --remote`, or let `.github/workflows/sync-media-r2.yml` sync once R2 keys are set as repo secrets.
 - React site layout: `site/src/sections/*.jsx` (one component per page section, markup), `site/src/site.js` (all page behaviour, run once after render from `App.jsx`), `site/src/hero.js`, `site/src/loader.js`, `site/src/styles/site.css`, `site/how-it-works.html` (the Three.js scene, second Vite entry, embedded in section 02).
 
 - `npm run dev` — Astro dev server (http://localhost:4321).
