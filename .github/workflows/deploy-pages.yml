@@ -2,9 +2,9 @@
 # Needs repository secrets CLOUDFLARE_API_TOKEN (Pages: Edit) and CLOUDFLARE_ACCOUNT_ID.
 # Optional repository variable CF_PAGES_PROJECT (defaults to "avoflare").
 # Media on R2: set secrets R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY (an R2 API token with
-# Object Read & Write on the bucket) and the variable MEDIA_BASE (the bucket's public URL,
-# e.g. https://pub-xxxx.r2.dev or https://media.your-domain). Then public/media is synced to
-# the bucket under media/ and the site loads every image and video from there.
+# Object Read & Write on the bucket). Then public/media is synced to the bucket under media/
+# and the site loads every image and video from the bucket's public URL (variable MEDIA_BASE,
+# default https://pub-dead812eb1de4654a9d56f298fda8604.r2.dev).
 # Optional variable R2_BUCKET (defaults to "avoflare").
 name: Deploy to Cloudflare Pages
 
@@ -34,8 +34,16 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
+      # Media go to R2 only once the R2 keys are in place; until then they ship with the site.
+      - name: Choose where media are served from
+        id: media
+        env:
+          R2_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}
+        run: |
+          if [ -n "$R2_KEY" ]; then echo "base=${{ vars.MEDIA_BASE || 'https://pub-dead812eb1de4654a9d56f298fda8604.r2.dev' }}" >> "$GITHUB_OUTPUT"; fi
+
       - name: Sync media to R2
-        if: ${{ vars.MEDIA_BASE != '' }}
+        if: ${{ steps.media.outputs.base != '' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -48,7 +56,7 @@ jobs:
       - name: Build
         working-directory: site
         env:
-          MEDIA_BASE: ${{ vars.MEDIA_BASE }}
+          MEDIA_BASE: ${{ steps.media.outputs.base }}
         run: |
           npm ci
           npm run build
