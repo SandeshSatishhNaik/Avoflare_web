@@ -7,7 +7,9 @@ import { defineConfig } from 'vite';
 // When MEDIA_BASE is set (for example the public URL of the R2 bucket), every "/media/..." path is
 // rewritten to "<MEDIA_BASE>/media/..." at build time and the media folder is left out of dist,
 // so images and videos are served from R2 instead of Pages. Without it, media ship with the site.
-const MEDIA_BASE = (process.env.MEDIA_BASE || '').replace(/\/+$/, '');
+// Cloudflare Pages builds (CF_PAGES is set there) default to the avoflare R2 bucket.
+const R2_PUBLIC = 'https://pub-dead812eb1de4654a9d56f298fda8604.r2.dev';
+const MEDIA_BASE = (process.env.MEDIA_BASE ?? (process.env.CF_PAGES ? R2_PUBLIC : '')).replace(/\/+$/, '');
 const rewrite = code => code.replace(/(?<=["'(\s,`])\/media\//g, `${MEDIA_BASE}/media/`);
 
 function mediaFromR2() {

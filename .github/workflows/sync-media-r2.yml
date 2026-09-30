@@ -1,0 +1,40 @@
+# Cloudflare Pages builds and publishes the site itself (Git integration, project "avoflare-web":
+# build command `npm run build`, output `dist`). This workflow only keeps the R2 bucket in step
+# with public/media, so new or changed images and videos reach https://pub-dead812eb1de4654a9d56f298fda8604.r2.dev.
+# It runs when the secrets R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY (R2 token, Object Read & Write
+# on the "avoflare" bucket) exist; without them it skips. Media can also be uploaded by hand with
+# `npx wrangler r2 object put avoflare/media/<path> --file public/media/<path> --remote`.
+name: Sync media to R2
+
+on:
+  push:
+    branches: [main]
+    paths: ['public/media/**']
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check for R2 keys
+        id: keys
+        env:
+          R2_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}
+        run: if [ -n "$R2_KEY" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "No R2 keys set; skipping."; fi
+
+      - name: Sync public/media to the bucket
+        if: steps.keys.outputs.ok == '1'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: >
+          aws s3 sync public/media s3://avoflare/media
+          --endpoint-url https://9127fc746563a3fe5cf240a895430846.r2.cloudflarestorage.com
+          --exclude PROVENANCE.md --cache-control "public, max-age=604800" --only-show-errors
