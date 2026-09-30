@@ -28,4 +28,3 @@ Never published: the third-party TAPAS news graphic in the zip, and any watermar
 ## v/demo-placeholder (2026-09-30)
 
 - `demo-placeholder.mp4`, `-720.mp4`, `.webp`: placeholder for the Demo section, joined by ffmpeg from the site's own graded clips in this order: reel-runway, film-takeoff, film-cruise, reel-clouds-hd, reel-station, film-night (0.6 s cross-fades, no audio). Poster frame at 20 s. Replace with the recorded demo.
-- `brand/creator.png`: GitHub avatar of the site's creator (github.com/SandeshSatishhNaik), used in the footer credit.

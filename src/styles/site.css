@@ -1034,13 +1034,5 @@
     .layer i, .cue i, .status::before, .chip-top b::before, .sensor::after { animation: none; }
     html { scroll-behavior: auto; }
   }
-  /* creator credit: a small signature card at the end of the footer */
-  .fin-note .fin-legal { align-items: center; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); }
-  .fin-credit { display: inline-flex; align-items: center; gap: 12px; padding: 6px 14px 6px 6px; border-radius: 999px; text-decoration: none; letter-spacing: 0;
-    background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); transition: background .3s, box-shadow .3s, transform .4s var(--ease); }
-  .fin-credit:hover, .fin-credit:focus-visible { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(159,196,234,.5); transform: translateY(-2px); }
-  .fin-credit img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgba(159,196,234,.55); }
-  .fin-credit .who { display: grid; line-height: 1.2; text-align: left; }
-  .fin-credit small { font: 600 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: #9fc4ea; }
-  .fin-credit b { font: 700 15px var(--sans); color: #fff; }
-  .fin-credit svg { width: 18px; height: 18px; margin-left: 4px; color: rgba(255,255,255,.75); transition: color .3s; } .fin-credit:hover svg { color: #fff; }
+  .fin-by a { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; transition: border-color .3s, color .3s; }
+  .fin-by a:hover, .fin-by a:focus-visible { color: #cfe3f4; border-color: #cfe3f4; } .fin-by svg { width: 13px; height: 13px; }
