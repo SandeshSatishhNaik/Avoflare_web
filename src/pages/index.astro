@@ -2,7 +2,42 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Stamp from '../components/Stamp.astro';
-import MissionFilm from '../components/islands/MissionFilm.jsx';
+import Media from '../components/Media.astro';
+import FilmChapters from '../components/FilmChapters.astro';
+
+const reel = [
+  { video: 'reel-runway', label: 'Take-off', caption: 'A high mountain runway at blue hour.' },
+  { video: 'reel-clouds', label: 'Above the clouds', caption: 'Hours of endurance, one engine to watch.' },
+  { img: 'nacelle', label: 'The engine', caption: 'Every sensor, every frame, every second.' },
+  { video: 'reel-station', label: 'The ground station', caption: 'Where the engineer keeps final authority.' },
+];
+
+const evidence = [
+  { n: 52, unit: 'fault types', text: 'injected by the simulation fault library', href: '/problem/#faults' },
+  { n: 10, unit: 'mission profiles', text: 'including high altitude, hot, cold and endurance', href: '/digital-twin/#missions' },
+  { n: 17, unit: 'CAN message IDs', text: 'encoded and decoded, 0x100 to 0x110', href: '/how-it-works/' },
+  { n: 2, unit: 'hour mission', text: 'replayable with its healthy twin beside it', href: '/demo/' },
+];
+
+const status = [
+  ['Engine physics simulation (MATLAB/Simulink)', 'impl'],
+  ['52-type fault library, 10 mission profiles', 'impl'],
+  ['CAN encoding and decoding, 17 message IDs', 'impl'],
+  ['Healthy-reference runs and divergence data', 'impl'],
+  ['MATLAB dashboard and browser replay', 'impl'],
+  ['ETPR runtime and Edge AI chain', 'design'],
+  ['GCS AI, EIR and Sentinel', 'design'],
+  ['Remaining useful life, health indices', 'design'],
+] as const;
+
+const gallery = [
+  ['runway-blue', 'Blue hour on the runway'],
+  ['clouds-sunset', 'Cruise above the cloud deck'],
+  ['nacelle', 'Engine nacelle, cowling open'],
+  ['engine', 'Exhaust side, running warm'],
+  ['station', 'The ground station at night'],
+  ['runway-night', 'Runway lights, waiting for return'],
+];
 
 const next = [
   ['/problem/', 'Problem', 'Problem Statement 26054, and where each requirement is covered.'],
@@ -15,80 +50,233 @@ const next = [
 ];
 ---
 <Base title="AVOFLARE" theme="dark" description="AVOFLARE is an engine digital twin for the aero piston engine of a MALE UAV: on-board fault detection that survives a lost link, and a ground chain that builds the engineer's case.">
-  <link slot="head" rel="preload" as="image" href="/media/uav-runway.webp" fetchpriority="high" />
-  <section class="hero" aria-labelledby="hero-title">
-    <img class="hero-img" src="/media/uav-runway.webp" alt="" width="1376" height="768" fetchpriority="high" decoding="async" />
-    <div class="hero-scrim" aria-hidden="true"></div>
-    <div class="wrap hero-inner">
-      <h1 id="hero-title" class="display">Engine health that survives a lost link.</h1>
-      <p class="hero-sub">A digital twin for a MALE UAV's piston engine: it catches faults on board and builds the engineer's case on the ground.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#film"><Icon name="arrow-down" />Watch the mission</a>
-        <a class="btn" href="/demo/">Open the replay</a>
+  <link slot="head" rel="preload" as="image" href="/media/v/reel-runway.webp" fetchpriority="high" />
+
+  <section class="hero theme-dark" aria-labelledby="hero-title" data-reel>
+    {reel.map((r, i) => (
+      <div class={`reel-item ${i === 0 ? 'is-active' : ''}`} data-reel-item>
+        <Media video={r.video} img={r.img} scrim="none" kenburns={!!r.img} eager={i === 0} />
       </div>
-      <p class="hero-meta">Problem Statement 26054 · aero piston engines in MALE UAVs</p>
+    ))}
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="gridlines" aria-hidden="true"></div>
+    <div class="frame-ticks" aria-hidden="true"></div>
+
+    <div class="wrap hero-inner">
+      <h1 id="hero-title" class="cadence hero-title" data-split>Engine health that <em>survives a lost link.</em></h1>
+      <p class="hero-sub" data-reveal="0.3">A digital twin for a MALE UAV's piston engine. It catches faults on board, keeps working when the downlink drops, and builds the engineer's case on the ground.</p>
+      <div class="hero-actions" data-reveal="0.45">
+        <a class="btn btn-primary" href="#film"><Icon name="arrow-down" />Watch the mission</a>
+        <a class="btn btn-glass" href="/demo/">Open the replay</a>
+      </div>
     </div>
-    <p class="hero-note">Illustration: AI-generated UAV. Data on this site: simulated.</p>
+
+    <div class="reel-nav" role="group" aria-label="Hero scenes">
+      {reel.map((r, i) => (
+        <button type="button" class={`reel-thumb ${i === 0 ? 'is-active' : ''}`} data-reel-thumb={i} aria-pressed={i === 0 ? 'true' : 'false'}>
+          <img src={r.video ? `/media/v/${r.video}.webp` : `/media/img/${r.img}-1200.webp`} alt="" width="160" height="90" loading="lazy" />
+          <span class="reel-label">{r.label}</span>
+          <span class="reel-cap">{r.caption}</span>
+          <span class="reel-bar" aria-hidden="true"></span>
+        </button>
+      ))}
+    </div>
+    <p class="hero-note">Problem Statement 26054 · AI-generated imagery · simulated data</p>
   </section>
 
-  <MissionFilm client:visible />
+  <section class="statement section" aria-labelledby="st-title">
+    <div class="wrap">
+      <h2 id="st-title" class="statement-text" data-split>
+        AVOFLARE watches a UAV's engine against a healthy twin of itself. It <span class="sweep">keeps working when the link is lost</span>, and it hands the engineer a case, not an alarm.
+      </h2>
+    </div>
+  </section>
 
-  <section class="section">
+  <FilmChapters />
+
+  <section class="panels" aria-label="Where AVOFLARE runs">
+    <article class="panel">
+      <div class="panel-media" data-aperture><Media img="clouds-sunset" scrim="none" /></div>
+      <div class="panel-text">
+        <h2 class="caps" data-split>On the aircraft</h2>
+        <p data-reveal>CAN frames pass through ETPR into one CanonicalTelemetryState. The Edge AI chain (PINN twin, EKF, K-means, SNN, QR-DQN, Safety) keeps deciding even with no link to the ground.</p>
+        <p class="stamp stamp-design" data-reveal>designed architecture</p>
+        <a class="btn" href="/how-it-works/" data-reveal>How it works<Icon name="arrow-right" /></a>
+      </div>
+    </article>
+    <article class="panel panel-flip">
+      <div class="panel-media" data-aperture><Media img="station" scrim="none" /></div>
+      <div class="panel-text">
+        <h2 class="caps" data-split>On the ground</h2>
+        <p data-reveal>GCS AI builds an auditable engineering case: divergence from the baseline, competing causes, evidence, prognosis and a proposed decision. EIR remembers; Sentinel guards how models change.</p>
+        <p class="stamp stamp-design" data-reveal>designed architecture</p>
+        <a class="btn" href="/fault-response/" data-reveal>Fault response<Icon name="arrow-right" /></a>
+      </div>
+    </article>
+  </section>
+
+  <section class="section evidence" aria-labelledby="ev-title">
+    <div class="wrap">
+      <h2 id="ev-title" class="caps section-title" data-split>Built and running today</h2>
+      <ul class="ev-rows">
+        {evidence.map(e => (
+          <li data-reveal>
+            <a href={e.href}>
+              <span class="ev-n num" data-count={e.n}>{e.n}</span>
+              <span class="ev-unit">{e.unit}</span>
+              <span class="ev-text">{e.text}</span>
+              <Icon name="arrow-up-right" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="status-title">
     <div class="wrap split">
       <div class="stack">
-        <h2 class="display" style="font-size:var(--step-3)">What runs today, and what is designed.</h2>
-        <p class="lead">Everything the film shows is labelled. The engine simulation and its data are real; the AI chains are the architecture we are building.</p>
+        <h2 id="status-title" class="cadence" style="font-size:var(--step-4)" data-split>What runs today, <em>and what is designed.</em></h2>
+        <p class="lead" data-reveal>Everything on this site is labelled. The engine simulation and its data are real; the AI chains are the architecture we are building.</p>
       </div>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead><tr><th>Part</th><th>Status</th></tr></thead>
-          <tbody>
-            <tr><td>Engine physics simulation (MATLAB/Simulink)</td><td><Stamp status="impl" /></td></tr>
-            <tr><td>52-type fault library, 10 mission profiles</td><td><Stamp status="impl" /></td></tr>
-            <tr><td>CAN encoding and decoding, 17 message IDs</td><td><Stamp status="impl" /></td></tr>
-            <tr><td>Healthy-reference runs and divergence data</td><td><Stamp status="impl" /></td></tr>
-            <tr><td>MATLAB dashboard and browser replay</td><td><Stamp status="impl" /></td></tr>
-            <tr><td>ETPR runtime and Edge AI chain</td><td><Stamp status="design" /></td></tr>
-            <tr><td>GCS AI, EIR and Sentinel</td><td><Stamp status="design" /></td></tr>
-            <tr><td>Remaining useful life, health indices</td><td><Stamp status="design" /></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul class="status-rows" data-reveal>
+        {status.map(([a, s]) => <li><span>{a}</span><Stamp status={s} /></li>)}
+      </ul>
     </div>
   </section>
 
-  <section class="section">
+  <section class="gallery" aria-labelledby="gal-title">
+    <div class="wrap gal-head">
+      <h2 id="gal-title" class="caps" data-split>From the runway to the ground station</h2>
+      <p class="ai-note">AI-generated illustrations of the AVOFLARE mission. Drag or scroll sideways.</p>
+    </div>
+    <ul class="gal-strip" data-lenis-prevent-horizontal>
+      {gallery.map(([id, cap]) => (
+        <li>
+          <figure>
+            <img src={`/media/img/${id}-1200.webp`} alt={cap} width="1200" height="675" loading="lazy" decoding="async" />
+            <figcaption>{cap}</figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="section" aria-labelledby="deeper-title">
     <div class="wrap">
-      <h2 class="display" style="font-size:var(--step-3)">Go deeper</h2>
+      <h2 id="deeper-title" class="caps section-title" data-split>Go deeper</h2>
       <ul class="index-list">
         {next.map(([href, title, text]) => (
-          <li><a href={href}><strong>{title}</strong><span>{text}</span><Icon name="arrow-right" /></a></li>
+          <li data-reveal><a href={href}><strong>{title}</strong><span>{text}</span><Icon name="arrow-right" /></a></li>
         ))}
       </ul>
     </div>
   </section>
 </Base>
 
-<style>
-  .hero { position: relative; min-height: calc(100dvh - var(--nav-h)); display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; }
-  .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; z-index: -2; animation: hero-drift 24s var(--ease-out) both; }
-  @keyframes hero-drift { from { transform: scale(1.08); } to { transform: scale(1); } }
-  .hero-note { position: absolute; right: var(--gutter); bottom: var(--s-4); font-size: 0.78rem; color: var(--ink-3); }
-  .hero-scrim { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,26,54,.25) 0%, rgba(10,26,54,.35) 45%, rgba(5,13,28,.92) 100%), linear-gradient(90deg, rgba(5,13,28,.7) 0%, transparent 60%); }
-  .hero-inner { padding-block: var(--s-8) clamp(2.5rem, 2rem + 4vh, 5rem); display: grid; gap: var(--s-5); justify-items: start; }
+<script>
+  // Hero reel: crossfades four scenes; thumbnails switch scenes and show progress. Stays on scene 1 under reduced motion.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = [...document.querySelectorAll<HTMLElement>('[data-reel-item]')];
+  const thumbs = [...document.querySelectorAll<HTMLButtonElement>('[data-reel-thumb]')];
+  const DUR = 8000;
+  let cur = 0, timer = 0;
+  const vid = (i: number) => items[i].querySelector('video');
+  function show(i: number) {
+    items[cur].classList.remove('is-active'); thumbs[cur].classList.remove('is-active'); thumbs[cur].setAttribute('aria-pressed', 'false');
+    vid(cur)?.pause();
+    cur = i;
+    items[cur].classList.add('is-active'); thumbs[cur].classList.add('is-active'); thumbs[cur].setAttribute('aria-pressed', 'true');
+    const v = vid(cur);
+    if (v && !reduce) { v.preload = 'auto'; v.currentTime = 0; v.play().catch(() => {}); }
+    clearTimeout(timer);
+    if (!reduce) timer = window.setTimeout(() => show((cur + 1) % items.length), DUR);
+  }
+  thumbs.forEach((t, i) => t.addEventListener('click', () => show(i)));
+  document.documentElement.style.setProperty('--reel-dur', `${DUR}ms`);
+  show(0);
+  // Pause the reel when the hero is off screen.
+  new IntersectionObserver(([e]) => {
+    if (reduce) return;
+    if (e.isIntersecting) show(cur); else { clearTimeout(timer); vid(cur)?.pause(); }
+  }).observe(document.querySelector('[data-reel]')!);
+</script>
 
-  .hero h1 { font-size: clamp(2.5rem, 1.4rem + 3.6vw, 4.6rem); max-width: 16ch; }
-  .hero-sub { font-size: var(--step-1); color: var(--ink-2); max-width: 44ch; line-height: 1.45; }
-  .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
-  .hero-meta { font-size: 0.86rem; color: var(--ink-3); }
-  @media (prefers-reduced-motion: reduce) { .hero-img { animation: none; } }
-  @media (max-width: 700px) { .hero-note { position: static; padding: 0 var(--gutter) var(--s-4); } .hero { flex-direction: column; align-items: stretch; justify-content: flex-end; } }
+<style>
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; background: var(--navy-950); }
+  .reel-item { position: absolute; inset: 0; z-index: -3; opacity: 0; transition: opacity 1.6s var(--ease-io); }
+  .reel-item.is-active { opacity: 1; }
+  .reel-item :global(.media > video), .reel-item :global(.media > img) { transform: scale(1.06); transition: transform 9s linear; }
+  .reel-item.is-active :global(.media > video) { transform: scale(1); }
+  .hero-scrim { position: absolute; inset: 0; z-index: -2; background:
+    linear-gradient(180deg, rgba(5,13,28,.55) 0%, rgba(5,13,28,0) 26%, rgba(5,13,28,.25) 55%, rgba(5,13,28,.94) 100%),
+    linear-gradient(90deg, rgba(5,13,28,.72) 0%, rgba(5,13,28,.2) 50%, transparent 75%); }
+  .hero-inner { position: relative; z-index: 2; padding-block: 0 clamp(8.5rem, 6rem + 10vh, 12rem); display: grid; gap: var(--s-5); justify-items: start; }
+  .hero-title { font-size: clamp(2.8rem, 1.2rem + 5.4vw, 6.6rem); max-width: 12.5ch; }
+  .hero-sub { font-size: var(--step-1); color: var(--ink-2); max-width: 46ch; line-height: 1.5; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); }
+  .hero-note { position: absolute; z-index: 2; left: var(--gutter); bottom: var(--s-5); font-size: 0.74rem; color: var(--ink-3); }
+
+  .reel-nav { position: absolute; z-index: 3; right: var(--gutter); bottom: var(--s-5); display: grid; grid-template-columns: repeat(4, minmax(0, 170px)); gap: var(--s-3); }
+  .reel-thumb { position: relative; display: grid; gap: 0.35rem; padding: 0 0 0.6rem; text-align: left; background: none; border: 0; cursor: pointer; color: var(--ink-2); opacity: 0.62; transition: opacity 300ms; }
+  .reel-thumb:hover, .reel-thumb.is-active { opacity: 1; color: var(--ink); }
+  .reel-thumb img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line-strong); }
+  .reel-label { font-size: 0.82rem; font-weight: 650; }
+  .reel-cap { font-size: 0.74rem; line-height: 1.35; color: var(--ink-3); }
+  .reel-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); overflow: hidden; }
+  .reel-bar::after { content: ''; position: absolute; inset: 0; background: var(--ink); transform: scaleX(0); transform-origin: left; }
+  .reel-thumb.is-active .reel-bar::after { animation: reel-prog var(--reel-dur, 8s) linear forwards; }
+  @keyframes reel-prog { to { transform: scaleX(1); } }
+  @media (max-width: 1100px) { .reel-cap { display: none; } }
+  @media (max-width: 760px) {
+    .reel-nav { left: var(--gutter); right: var(--gutter); bottom: 2.6rem; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+    .reel-thumb img { display: none; }
+    .reel-label { font-size: 0.7rem; }
+    .hero-inner { padding-bottom: 6.5rem; }
+    .hero-note { bottom: var(--s-3); }
+  }
+
+  .statement { background: var(--navy-950); }
+  .statement-text { font-size: clamp(1.7rem, 1rem + 2.8vw, 3.6rem); font-weight: 520; font-stretch: 108%; line-height: 1.18; letter-spacing: -0.015em; max-width: 26ch; margin-inline: auto; text-align: center; }
+
+  .panels { background: var(--navy-950); }
+  .panel { display: grid; min-height: 88svh; border-top: 1px solid var(--line); }
+  @media (min-width: 960px) { .panel { grid-template-columns: 1fr 1fr; } .panel-flip .panel-media { order: 2; } }
+  .panel-media { position: relative; min-height: 52svh; overflow: hidden; }
+  .panel-text { display: grid; align-content: center; justify-items: start; gap: var(--s-5); padding: clamp(2.5rem, 2rem + 4vw, 6rem) var(--gutter); background: var(--navy-900); }
+  .panel-text h2 { font-size: var(--step-5); }
+  .panel-text > p:not(.stamp) { color: var(--ink-2); font-size: var(--step-1); line-height: 1.5; max-width: 44ch; }
+
+  .ev-rows { list-style: none; margin-top: var(--s-7); border-top: 1px solid var(--line-strong); }
+  .ev-rows a { display: grid; grid-template-columns: minmax(5rem, 9rem) minmax(10rem, 18rem) 1fr auto; gap: var(--s-5); align-items: baseline; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); text-decoration: none; }
+  .ev-rows a > span { transition: translate 400ms var(--ease-out); }
+  .ev-rows a:hover > span { translate: 0.75rem 0; }
+  .ev-n { font-size: clamp(2.6rem, 1.6rem + 3.4vw, 5rem); line-height: 1; color: var(--ink); }
+  .ev-unit { font-size: var(--step-1); font-weight: 650; font-stretch: 112%; }
+  .ev-text { color: var(--ink-2); }
+  .ev-rows :global(svg) { width: 22px; height: 22px; color: var(--ink-3); }
+  @media (max-width: 760px) { .ev-rows a { grid-template-columns: auto 1fr; } .ev-text { grid-column: 1 / -1; } .ev-rows :global(svg) { display: none; } }
+
+  .status-rows { list-style: none; border-top: 1px solid var(--line-strong); }
+  .status-rows li { display: flex; justify-content: space-between; align-items: center; gap: var(--s-4); padding: 0.95rem 0; border-bottom: 1px solid var(--line); }
+
+  .gallery { padding-block: clamp(3.5rem, 2rem + 6vw, 7rem); background: var(--navy-950); border-top: 1px solid var(--line); }
+  .gal-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s-4); }
+  .gal-head h2 { font-size: var(--step-4); max-width: 16ch; }
+  .gal-strip { list-style: none; display: grid; grid-auto-flow: column; grid-auto-columns: min(78vw, 640px); gap: var(--s-4); overflow-x: auto; scroll-snap-type: x mandatory; padding: var(--s-7) var(--gutter) var(--s-4); scrollbar-width: thin; }
+  .gal-strip li { scroll-snap-align: start; }
+  .gal-strip figure { margin: 0; }
+  .gal-strip img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; transition: transform 900ms var(--ease-out); }
+  .gal-strip figure:hover img { transform: scale(1.03); }
+  .gal-strip figcaption { margin-top: var(--s-3); font-size: 0.86rem; color: var(--ink-2); }
+
   .index-list { list-style: none; margin-top: var(--s-6); border-top: 1px solid var(--line); }
-  .index-list a { display: grid; grid-template-columns: minmax(10rem, 16rem) 1fr auto; gap: var(--s-5); align-items: center; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); text-decoration: none; }
-  .index-list strong { font-size: var(--step-1); font-stretch: var(--wide); font-weight: 560; }
+  .index-list a { display: grid; grid-template-columns: minmax(10rem, 20rem) 1fr auto; gap: var(--s-5); align-items: center; padding: var(--s-5) 0; border-bottom: 1px solid var(--line); text-decoration: none; }
+  .index-list a > strong, .index-list a > span { transition: translate 400ms var(--ease-out); }
+  .index-list a:hover > strong, .index-list a:hover > span { translate: 0.75rem 0; }
+  .index-list strong { font-size: var(--step-2); font-stretch: 125%; font-weight: 720; text-transform: uppercase; }
   .index-list span { color: var(--ink-2); }
-  .index-list :global(svg) { width: 22px; height: 22px; color: var(--ink-3); transition: transform 200ms var(--ease-out), color 200ms; }
-  .index-list a:hover :global(svg) { transform: translateX(4px); color: var(--ink); }
-  .index-list a:hover strong { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.2em; }
+  .index-list :global(svg) { width: 22px; height: 22px; color: var(--ink-3); transition: transform 300ms var(--ease-out), color 200ms; }
+  .index-list a:hover :global(svg) { transform: translateX(4px); color: var(--fault); }
   @media (max-width: 700px) { .index-list a { grid-template-columns: 1fr auto; } .index-list span { grid-column: 1; } .index-list :global(svg) { grid-row: 1 / span 2; grid-column: 2; } }
 </style>

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · Above the Deck (Sky Atlas demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --haze: #f4f8fc; --sky: #cfe4f6; --cer: #4e8fd1; --deep: #1b355a; --deep-2: #4a6583; --sun: #f4a547;
+    --sans: 'Albert Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; color: var(--deep); font-family: var(--sans); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; background: var(--haze); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  img, video, svg, canvas { display: block; max-width: 100%; }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1240px); margin-inline: auto; }
+  .glass { background: linear-gradient(160deg, rgba(255,255,255,.74), rgba(255,255,255,.4)); backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,.95); border-radius: 28px; box-shadow: 0 1px 0 #fff inset, 0 40px 90px -40px rgba(27,53,90,.45); }
+
+  /* The stage: fixed sky + three depth layers */
+  .stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: linear-gradient(180deg, #bcd8f1 0%, #e6f0fa 55%, #f4f8fc 100%); }
+  .far { position: absolute; inset: -6%; will-change: transform; }
+  .far video { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.28) saturate(.72) contrast(.88); }
+  .far::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(244,248,252,.25), rgba(244,248,252,0) 40%, rgba(244,248,252,.35)); }
+  .sunbloom { position: absolute; width: 70vmax; aspect-ratio: 1; left: 55%; top: -30vmax; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,236,200,.75), rgba(255,236,200,0)); mix-blend-mode: screen; pointer-events: none; }
+  .layer { position: absolute; left: -10%; right: -10%; pointer-events: none; will-change: transform; }
+  .layer img { position: absolute; }
+  .mid { top: 38%; height: 70%; }
+  .near { top: 62%; height: 80%; }
+  .near img { filter: drop-shadow(0 30px 40px rgba(27,53,90,.18)); }
+
+  .nav { position: fixed; top: 16px; left: 50%; translate: -50% 0; z-index: 20; width: min(100% - 24px, 1000px); display: flex; align-items: center; gap: 24px; padding: 10px 12px 10px 22px; border-radius: 999px; }
+  .nav b { letter-spacing: .24em; font-weight: 800; font-size: 14px; }
+  .nav ul { list-style: none; display: flex; gap: 22px; margin: 0 0 0 auto; padding: 0; font-size: 14px; color: var(--deep-2); }
+  .nav a { text-decoration: none; color: inherit; }
+  .nav .cta { background: var(--deep); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 700; }
+  @media (max-width: 760px) { .nav ul { display: none; } .nav .cta { margin-left: auto; } }
+
+  .alt { position: fixed; right: clamp(8px, 2vw, 28px); top: 14vh; bottom: 14vh; width: 70px; z-index: 5; font: 11px var(--mono); color: var(--deep-2); }
+  .alt::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(0deg, var(--deep-2) 0 1px, transparent 1px 12px); opacity: .45; }
+  .alt .mark { position: absolute; right: 16px; translate: 0 -50%; background: var(--deep); color: #fff; padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+  @media (max-width: 700px) { .alt { display: none; } }
+
+  main { position: relative; z-index: 2; }
+  .hero { min-height: 100svh; display: grid; align-items: center; }
+  .panel { padding: clamp(24px, 3vw, 40px); max-width: 640px; }
+  h1 { font-size: clamp(2.8rem, 1.5rem + 4.6vw, 6rem); line-height: .95; letter-spacing: -0.035em; font-weight: 800; margin: 0; }
+  h1 em { font-style: italic; font-weight: 400; color: var(--cer); }
+  .lede { color: var(--deep-2); font-size: 1.15rem; margin: 18px 0 24px; max-width: 44ch; }
+  .btn { display: inline-flex; align-items: center; min-height: 50px; padding: 0 22px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+  .btn-deep { background: var(--deep); color: #fff; }
+  .btn-glass { color: var(--deep); background: rgba(255,255,255,.55); border: 1px solid #fff; margin-left: 8px; }
+  .hint { margin-top: 18px; font: 12px var(--mono); color: var(--deep-2); }
+
+  /* Chapters: panels hanging at different depths inside the deck */
+  .chapter { min-height: 110svh; display: grid; align-items: center; padding: 12vh 0; }
+  .chapter .panel { max-width: 560px; transition: transform .8s var(--ease), box-shadow .8s var(--ease); }
+  .chapter.right .panel { margin-left: auto; }
+  .chapter .panel:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 1px 0 #fff inset, 0 60px 110px -40px rgba(27,53,90,.55); }
+  .altlabel { font: 600 13px var(--mono); color: var(--cer); letter-spacing: .08em; }
+  h2 { font-size: clamp(2rem, 1.3rem + 2.6vw, 3.4rem); line-height: 1; letter-spacing: -0.03em; margin: 10px 0 14px; font-weight: 800; }
+  p.body { color: var(--deep-2); margin: 0; }
+  .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 20px; border-radius: 16px; overflow: hidden; background: rgba(27,53,90,.12); }
+  .figs div { background: rgba(255,255,255,.72); padding: 14px 16px; }
+  .figs dt { font-size: 12.5px; color: var(--deep-2); }
+  .figs dd { margin: 2px 0 0; font: 600 1.45rem/1.1 var(--mono); }
+  .figs dd.sun { color: var(--sun); }
+  .chart { margin-top: 18px; }
+  .chart svg { width: 100%; height: auto; }
+  .fault-num { font: 700 clamp(3rem, 2rem + 4vw, 5.5rem)/1 var(--mono); letter-spacing: -0.03em; color: var(--sun); margin: 12px 0 6px; transition: font-size .3s; }
+  .lost { text-align: center; }
+  .lost .c { display: flex; justify-content: center; gap: 36px; margin-top: 18px; }
+  .lost .c b { display: block; font: 600 1.9rem var(--mono); }
+  .lost s { text-decoration-color: var(--sun); text-decoration-thickness: 4px; }
+  .note { font-size: 12.5px; color: var(--deep-2); margin-top: 12px; }
+  .techlog dl { display: grid; grid-template-columns: 8rem 1fr; gap: 8px 16px; margin: 16px 0 0; font-size: 15px; }
+  .techlog dt { color: var(--deep-2); }
+  .techlog dd { margin: 0; }
+  .about { margin: 0 auto 90px; padding: 26px 28px; max-width: 1240px; }
+  .about h3 { margin: 0 0 8px; }
+  .about ul { margin: 0; padding-left: 18px; color: var(--deep-2); }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 30; font: 700 13px var(--sans); padding: 10px 16px; border-radius: 999px; color: var(--deep); text-decoration: none; }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="stage" aria-hidden="true">
+  <div class="far" id="far"><video src="../public/media/v/reel-clouds.mp4" poster="../public/media/v/reel-clouds.webp" autoplay muted loop playsinline></video></div>
+  <div class="sunbloom"></div>
+  <div class="layer mid" id="mid"></div>
+  <div class="layer near" id="near"></div>
+</div>
+<div class="alt" aria-hidden="true"><div class="mark num" id="mark">0 m</div></div>
+<nav class="nav glass" aria-label="Demo navigation"><b>AVOFLARE</b><ul><li><a href="#twin">Twin</a></li><li><a href="#fault">The fault</a></li><li><a href="#lost">Link lost</a></li><li><a href="#case">The case</a></li></ul><a class="cta" href="#fault">See the fault</a></nav>
+
+<main>
+  <header class="hero"><div class="wrap"><div class="panel glass reveal">
+    <h1>Engine health that <em>survives a lost link.</em></h1>
+    <p class="lede">Fly into the cloud deck with a MALE UAV. Everything its engine does is compared, on board, with a healthy twin of itself, whether or not the ground is listening.</p>
+    <a class="btn btn-deep" href="#twin">Enter the deck</a><a class="btn btn-glass" href="#fault">Skip to the fault</a>
+    <p class="hint">Move your pointer: near clouds drift faster than the far sky.</p>
+  </div></div></header>
+
+  <section class="chapter" id="twin"><div class="wrap"><div class="panel glass reveal">
+    <p class="altlabel">1 000 m · INTO THE DECK</p>
+    <h2>Every flight flies twice.</h2>
+    <p class="body">The simulation flies the same mission once more with no fault. That healthy twin travels beside the real run second by second, so every reading has an expected value to be measured against.</p>
+  </div></div></section>
+
+  <section class="chapter right" id="climb"><div class="wrap"><div class="panel glass reveal">
+    <p class="altlabel">3 333 m · CLIMB</p>
+    <h2>Thin air, a working engine.</h2>
+    <p class="body">Sensors stream over the CAN bus into ETPR, which validates, decodes and stamps every value into one CanonicalTelemetryState for the Edge AI.</p>
+    <dl class="figs" id="figs"></dl>
+    <p class="note">Simulated at T+00:40:00 · TAPAS V4 run</p>
+  </div></div></section>
+
+  <section class="chapter" id="fault"><div class="wrap"><div class="panel glass reveal">
+    <p class="altlabel">4 000 m · CRUISE</p>
+    <h2>One hour in, the exhaust runs warm.</h2>
+    <div class="fault-num" id="faultNum">+0.0 °C</div>
+    <p class="body">A wearing turbocharger compressor pushes exhaust gas above what the twin expects. The number grows as the divergence grows.</p>
+    <div class="chart"><svg id="chart" viewBox="0 0 560 220" role="img" aria-label="EGT above the healthy twin across the mission"></svg></div>
+    <p class="note">EGT above the healthy twin · compressor wear 50 % from T+01:00 · watch 3 °C, flag 6 °C (illustrative bands)</p>
+  </div></div></section>
+
+  <section class="chapter right" id="lost"><div class="wrap"><div class="panel glass lost reveal">
+    <p class="altlabel">INSIDE THE DECK · LINK LOST</p>
+    <h2>Downlink <s>connected</s> lost.</h2>
+    <p class="body">Nothing on board stops. The Edge AI keeps judging the engine and buffers what it would have sent.</p>
+    <div class="c"><div><b class="num" id="proc">0</b>frames processed</div><div><b class="num" id="buf">0</b>buffered for the ground</div></div>
+    <p class="note">Illustrative counter · Edge AI chain: designed architecture</p>
+  </div></div></section>
+
+  <section class="chapter" id="case"><div class="wrap"><div class="panel glass techlog reveal">
+    <p class="altlabel">BELOW THE DECK · THE BASE</p>
+    <h2>A case, not an alarm.</h2>
+    <p class="body">When the link returns, the ground chain builds the engineer's case. The system proposes; the engineer signs.</p>
+    <dl><dt>Component</dt><dd>Turbocharger compressor</dd><dt>Finding</dt><dd>EGT up to <b class="num">+10.6 °C</b> above the twin, CHT −0.55 °C, sustained</dd><dt>Proposed</dt><dd>Inspect at the next maintenance window</dd><dt>Sign-off</dt><dd style="color:var(--sun);font-weight:700">Pending engineer approval</dd></dl>
+  </div></div></section>
+
+  <div class="wrap" style="padding-bottom:40px"><div class="about glass">
+    <h3>About this structure · Above the Deck</h3>
+    <ul>
+      <li>Sky Atlas world, multi-plane structure: the far sky (your cloud video) moves slowest, a mid cloud layer faster, near clouds fastest, with the pointer and with scroll. Chapters hang inside the deck as cloud-glass panels.</li>
+      <li>The clouds here are generated in the browser from soft puffs. The real build would add a clean cut-out of your UAV as its own mid layer, plus cloud layers matted from the stills.</li>
+      <li>Kept from the declined challengers: the fault's number grows with the divergence; panels lift when you point at them.</li>
+    </ul>
+  </div></div>
+</main>
+<a class="back glass" href="index.html">← All demos</a>
+
+<script src="data.js"></script>
+<script>
+const S = window.AV.s.slice(0, -1).map(r => ({ t: r[0], d: r[1], egt: r[2], cht: r[3], rpm: r[4], alt: r[5] }));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Cumulus sprites drawn from soft puffs (shaded underneath), then placed as images.
+function cloud(w, h, seed) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.filter = 'blur(5px)';
+  let r = seed; const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 70; i++) {
+    const px = w * (.2 + rnd() * .6), py = h * (.5 + rnd() * .25) - Math.sin((px / w) * Math.PI) * h * .18, pr = h * (.1 + rnd() * .1);
+    const g = x.createRadialGradient(px, py - pr * .3, pr * .1, px, py, pr);
+    g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.6, 'rgba(246,250,255,.75)'); g.addColorStop(1, 'rgba(210,226,242,0)');
+    x.fillStyle = g; x.beginPath(); x.arc(px, py, pr, 0, Math.PI * 2); x.fill();
+  }
+  const sh = x.createLinearGradient(0, h * .45, 0, h); sh.addColorStop(0, 'rgba(160,185,215,0)'); sh.addColorStop(1, 'rgba(150,178,210,.35)');
+  x.globalCompositeOperation = 'source-atop'; x.fillStyle = sh; x.fillRect(0, 0, w, h);
+  return c.toDataURL();
+}
+function fill(el, n, scale, seed) {
+  el.innerHTML = Array.from({ length: n }, (_, i) => {
+    const w = Math.round((420 + (i * 97 % 300)) * scale), h = Math.round(w * .45);
+    return `<img src="${cloud(w, h, seed + i * 31)}" alt="" style="left:${(i / n) * 110 - 5 + (i % 2) * 6}%;top:${(i * 37 % 60)}%;width:${w}px;opacity:${.75 + (i % 3) * .08}" />`;
+  }).join('');
+}
+fill(mid, 7, .8, 11); fill(near, 6, 1.5, 97);
+
+// Depth: pointer + scroll move each layer at its own rate.
+let mx = 0, my = 0, tx = 0, ty = 0;
+addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+function frame() {
+  tx += (mx - tx) * .05; ty += (my - ty) * .05;
+  const sy = scrollY;
+  far.style.transform = `translate(${tx * -14}px, ${ty * -10 - sy * .03}px) scale(1.04)`;
+  mid.style.transform = `translate(${tx * -40}px, ${ty * -24 - sy * .35}px)`;
+  near.style.transform = `translate(${tx * -90}px, ${ty * -50 - sy * .75}px)`;
+  const p = Math.min(1, sy / (document.documentElement.scrollHeight - innerHeight));
+  mark.style.top = `${(1 - p) * 100}%`; mark.textContent = `${Math.round(p * 4000).toLocaleString('en')} m`;
+  if (!reduce) requestAnimationFrame(frame);
+}
+frame(); if (reduce) addEventListener('scroll', frame, { passive: true });
+
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .2 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+const c = S.find(s => s.t >= 2400);
+figs.innerHTML = [['Altitude', `${c.alt} m`], ['Engine', `${c.rpm} rpm`], ['Exhaust gas', `${c.egt} °C`], ['vs twin', `+${c.d.toFixed(1)} °C`]].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+
+// Fault chart draws in; the headline number grows with the divergence as it plays.
+(() => {
+  const W = 560, H = 220, L = 30, R = 8, T = 10, B = 24, X = t => L + t / 7200 * (W - L - R), Y = v => T + (1 - v / 12) * (H - T - B);
+  let g = `<rect x="${L}" y="${Y(12)}" width="${W - L - R}" height="${Y(6) - Y(12)}" fill="rgba(244,165,71,.13)" />`;
+  for (let v = 0; v <= 12; v += 6) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(27,53,90,.12)" /><text x="${L - 6}" y="${Y(v) + 4}" font-size="11" font-family="JetBrains Mono" fill="#4a6583" text-anchor="end">${v}</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#4e8fd1" stroke-width="2" stroke-dasharray="6 5" /><polyline id="ln" fill="none" stroke="#1b355a" stroke-width="2.6" points="" /><circle id="dot" r="5" fill="#f4a547" stroke="#fff" stroke-width="2" />`;
+  chart.innerHTML = g;
+  let k = 0, timer;
+  const step = () => {
+    const seg = S.slice(0, k + 1);
+    document.getElementById('ln').setAttribute('points', seg.map(s => `${X(s.t).toFixed(1)},${Y(s.d).toFixed(1)}`).join(' '));
+    const s = S[k]; const dot = document.getElementById('dot'); dot.setAttribute('cx', X(s.t)); dot.setAttribute('cy', Y(s.d));
+    faultNum.textContent = `+${s.d.toFixed(1)} °C`; faultNum.style.fontSize = `${2.6 + s.d / 10.6 * 3}rem`;
+    if (++k < S.length) timer = setTimeout(step, 28);
+  };
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && !k) step(); }, { threshold: .4 }).observe(chart);
+})();
+
+let p = 0; setInterval(() => { p += 7; proc.textContent = p.toLocaleString('en'); buf.textContent = p.toLocaleString('en'); }, reduce ? 2000 : 200);
+</script>
+</body>
+</html>

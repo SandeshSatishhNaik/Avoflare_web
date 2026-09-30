@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · Sky Atlas (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --haze: #f3f7fb; --sky: #cfe3f4; --cerulean: #5b93cf; --deep: #1e3a5f; --deep-2: #4d6680; --sun: #f29d38;
+    --p: 0; /* scroll progress 0..1 = altitude */
+    --sans: 'Albert Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace; --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; color: var(--deep); font-family: var(--sans); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--sky) calc(40% + var(--p) * 60%), var(--haze)), color-mix(in srgb, var(--cerulean) calc(var(--p) * 55%), var(--haze))) fixed; }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1240px); margin-inline: auto; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  img, video, svg { display: block; max-width: 100%; }
+  .cloudglass { background: linear-gradient(160deg, rgba(255,255,255,.72), rgba(255,255,255,.38)); backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,.9); border-radius: 28px; box-shadow: 0 1px 0 #fff inset, 0 40px 90px -40px rgba(30,58,95,.45); }
+
+  /* Drifting clouds */
+  .clouds { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .clouds i { position: absolute; border-radius: 50%; background: rgba(255,255,255,.75); filter: blur(40px); animation: drift linear infinite; }
+  @keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+
+  /* Altitude scale */
+  .alt { position: fixed; right: clamp(8px, 2vw, 28px); top: 12vh; bottom: 12vh; width: 58px; z-index: 5; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; font: 11px var(--mono); color: var(--deep-2); }
+  .alt::before { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(0deg, var(--deep-2) 0 1px, transparent 1px 12px); opacity: .5; }
+  .alt .mark { position: absolute; right: 14px; top: calc((1 - var(--p)) * 100%); translate: 0 -50%; background: var(--deep); color: #fff; padding: 4px 8px; border-radius: 999px; white-space: nowrap; transition: top .1s linear; }
+  .alt span { padding-right: 16px; }
+  @media (max-width: 700px) { .alt { display: none; } }
+
+  .nav { position: fixed; top: 16px; left: 50%; translate: -50% 0; z-index: 20; width: min(100% - 24px, 1000px); display: flex; align-items: center; gap: 24px; padding: 10px 12px 10px 22px; border-radius: 999px; }
+  .nav b { letter-spacing: .24em; font-weight: 800; font-size: 14px; }
+  .nav ul { list-style: none; display: flex; gap: 22px; margin: 0 0 0 auto; padding: 0; font-size: 14px; color: var(--deep-2); }
+  .nav a { text-decoration: none; color: inherit; }
+  .nav .cta { background: var(--deep); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+  @media (max-width: 760px) { .nav ul { display: none; } .nav .cta { margin-left: auto; } }
+
+  main { position: relative; z-index: 1; }
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: end; overflow: hidden; }
+  .hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.5) saturate(.7) contrast(.85) hue-rotate(-6deg); }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(243,247,251,.35), rgba(243,247,251,0) 40%, rgba(243,247,251,.95)); }
+  .hero .panel { position: relative; z-index: 2; margin: 0 0 8vh; padding: clamp(24px, 3vw, 40px); max-width: 720px; }
+  h1 { font-size: clamp(2.8rem, 1.5rem + 4.6vw, 6rem); line-height: .96; letter-spacing: -0.035em; font-weight: 800; margin: 0; }
+  h1 em { font-style: italic; font-weight: 400; color: var(--cerulean); }
+  .lede { color: var(--deep-2); font-size: 1.15rem; margin: 18px 0 24px; max-width: 46ch; }
+  .btn { display: inline-flex; align-items: center; min-height: 50px; padding: 0 22px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+  .btn-deep { background: var(--deep); color: #fff; }
+  .btn-glass { color: var(--deep); background: rgba(255,255,255,.55); border: 1px solid #fff; margin-left: 8px; }
+
+  .band { position: relative; min-height: 92svh; display: grid; align-items: center; padding: 10vh 0; }
+  .band .grid { display: grid; gap: 36px; align-items: center; }
+  @media (min-width: 1000px) { .band .grid { grid-template-columns: 1fr 1fr; } .band.flip .grid > :first-child { order: 2; } }
+  .altlabel { font: 600 13px var(--mono); color: var(--cerulean); letter-spacing: .08em; }
+  h2 { font-size: clamp(2.1rem, 1.3rem + 2.8vw, 3.8rem); line-height: 1; letter-spacing: -0.03em; margin: 10px 0 16px; font-weight: 800; max-width: 16ch; }
+  p.body { color: var(--deep-2); max-width: 52ch; margin: 0; }
+  .photo { border-radius: 28px; overflow: hidden; aspect-ratio: 4 / 3; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.45) saturate(.7) contrast(.88); }
+
+  .read { padding: 26px; }
+  .read dl { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0; background: rgba(30,58,95,.12); border-radius: 16px; overflow: hidden; }
+  .read div { background: rgba(255,255,255,.7); padding: 16px 18px; }
+  .read dt { font-size: 13px; color: var(--deep-2); }
+  .read dd { margin: 4px 0 0; font: 600 1.6rem/1.1 var(--mono); }
+  .read dd.sun { color: var(--sun); }
+
+  .chart { padding: 24px; }
+  .chart svg { width: 100%; height: auto; }
+  .note { font-size: 12.5px; color: var(--deep-2); margin-top: 10px; }
+
+  .lost { text-align: center; padding: 40px; }
+  .lost .big { font-size: clamp(2.6rem, 1.5rem + 4vw, 5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .lost .big s { text-decoration-thickness: 4px; text-decoration-color: var(--sun); }
+  .lost .c { display: flex; justify-content: center; gap: 40px; margin-top: 22px; }
+  .lost .c b { display: block; font: 600 2rem var(--mono); }
+
+  .about { margin: 0 auto 80px; padding: 26px 28px; }
+  .about h3 { margin: 0 0 8px; }
+  .about ul { margin: 0; padding-left: 18px; color: var(--deep-2); }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 30; font: 700 13px var(--sans); padding: 10px 16px; border-radius: 999px; color: var(--deep); text-decoration: none; }
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 1.1s var(--ease), transform 1.1s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .clouds i { animation: none; } }
+</style>
+</head>
+<body>
+<div class="clouds" aria-hidden="true" id="clouds"></div>
+<div class="alt" aria-hidden="true"><span>4 000 m</span><span>3 000</span><span>2 000</span><span>1 000</span><span>0 m</span><div class="mark num" id="mark">0 m</div></div>
+<nav class="nav cloudglass" aria-label="Demo navigation"><b>AVOFLARE</b><ul><li><a href="#ground">Ground</a></li><li><a href="#cruise">Cruise</a></li><li><a href="#fault">The fault</a></li><li><a href="#deck">Cloud deck</a></li></ul><a class="cta" href="#fault">See the fault</a></nav>
+
+<main>
+  <header class="hero">
+    <video src="../public/media/v/reel-clouds.mp4" poster="../public/media/v/reel-clouds.webp" autoplay muted loop playsinline aria-hidden="true"></video>
+    <div class="wrap"><div class="panel cloudglass reveal">
+      <h1>Engine health that <em>survives a lost link.</em></h1>
+      <p class="lede">Climb with the UAV through the sky. At every altitude, its engine is compared with a healthy twin of itself, on board, whether or not the ground is listening.</p>
+      <a class="btn btn-deep" href="#ground">Begin the climb</a><a class="btn btn-glass" href="#fault">Skip to the fault</a>
+    </div></div>
+  </header>
+
+  <section class="band" id="ground">
+    <div class="wrap grid">
+      <div class="photo reveal"><img src="../public/media/img/runway-blue-1200.webp" alt="Illustration of the UAV on a mountain runway" /></div>
+      <div class="reveal"><p class="altlabel">0 m · GROUND</p><h2>Every flight starts with a twin.</h2><p class="body">Before take-off, the simulation flies the same mission without any fault. That healthy run travels beside the real one, second by second, so every reading has an expected value.</p></div>
+    </div>
+  </section>
+
+  <section class="band flip" id="cruise">
+    <div class="wrap grid">
+      <div class="read cloudglass reveal"><dl id="cruiseRead"></dl><p class="note">Simulated at T+00:40:00, climbing through 3 333 m.</p></div>
+      <div class="reveal"><p class="altlabel">3 333 m · CLIMB</p><h2>Thin air, a working engine.</h2><p class="body">Outside air drops below −7 °C. Sensors stream over the CAN bus into ETPR, which checks, decodes and stamps every value into one CanonicalTelemetryState for the Edge AI.</p></div>
+    </div>
+  </section>
+
+  <section class="band" id="fault">
+    <div class="wrap grid">
+      <div class="chart cloudglass reveal"><svg id="chart" viewBox="0 0 600 320" role="img" aria-label="EGT above the healthy twin across the mission"></svg><p class="note">EGT above the healthy twin, 2-hour simulated mission, compressor wear injected from one hour. Watch 3 °C, flag 6 °C (illustrative bands).</p></div>
+      <div class="reveal"><p class="altlabel">4 000 m · CRUISE</p><h2>One hour in, the exhaust runs warm.</h2><p class="body">The turbocharger compressor starts wearing. Exhaust gas climbs above what the twin expects, crosses the watch band and gets flagged at up to <strong class="num">+10.6 °C</strong>. The engine is still within limits; the trend is what matters.</p></div>
+    </div>
+  </section>
+
+  <section class="band flip" id="deck">
+    <div class="wrap grid">
+      <div class="lost cloudglass reveal"><div class="big">Downlink <s>connected</s> lost</div><div class="c"><div><b class="num" id="proc">0</b>frames processed on board</div><div><b class="num" id="buf">0</b>buffered for the ground</div></div><p class="note">Illustrative counter. Edge AI chain: designed architecture.</p></div>
+      <div class="reveal"><p class="altlabel">CLOUD DECK · LINK LOST</p><h2>Above the clouds, alone. Still deciding.</h2><p class="body">The link to the ground station drops. Nothing on board stops: the Edge AI keeps judging the engine and stores what it would have sent. When the link returns, the ground catches up and builds the engineer's case.</p></div>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="about cloudglass">
+    <h3>About this direction · Sky Atlas</h3>
+    <ul>
+      <li>World: the atlas of the sky. Scrolling is climbing: the page's light changes by altitude band and a scale on the right reads your altitude.</li>
+      <li>Colours: haze white, sky blue, cerulean, deep blue for text; one warm sun orange kept for the fault.</li>
+      <li>Type: Albert Sans, with Mono only for readings. Glass: frosted cloud-glass panels; soft clouds drift behind everything.</li>
+      <li>Footage is your blue-hour video lightened with a CSS filter; the real build would regrade it to daylight, ideally with a few new daylight clips.</li>
+    </ul>
+  </div></div>
+</main>
+<a class="back cloudglass" href="index.html">← All five demos</a>
+
+<script src="data.js"></script>
+<script>
+const S = window.AV.s.map(r => ({ t: r[0], d: r[1], egt: r[2], cht: r[3], rpm: r[4], alt: r[5] }));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Clouds
+clouds.innerHTML = Array.from({ length: 9 }, (_, i) => `<i style="top:${Math.random() * 90}%;width:${30 + Math.random() * 30}vw;height:${10 + Math.random() * 10}vw;animation-duration:${60 + Math.random() * 80}s;animation-delay:-${Math.random() * 120}s;opacity:${.35 + Math.random() * .4}"></i>`).join('');
+// Altitude follows scroll
+const setP = () => { const p = Math.min(1, scrollY / (document.documentElement.scrollHeight - innerHeight)); document.documentElement.style.setProperty('--p', p.toFixed(3)); mark.textContent = `${Math.round(p * 4000).toLocaleString('en')} m`; };
+addEventListener('scroll', setP, { passive: true }); setP();
+// Reveal
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .2 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+// Cruise readouts at 2400 s
+const c = S.find(s => s.t >= 2400), h = S.find(s => s.t >= 5400);
+cruiseRead.innerHTML = [['Altitude', `${c.alt} m`], ['Engine', `${c.rpm} rpm`], ['Exhaust gas', `${c.egt} °C`], ['vs twin, T+01:30', `+${h.d.toFixed(1)} °C`, 'sun']].map(([k, v, cls]) => `<div><dt>${k}</dt><dd class="${cls || ''}">${v}</dd></div>`).join('');
+// Chart
+(() => {
+  const W = 600, H = 320, L = 34, R = 10, T = 14, B = 30, X = t => L + t / 7200 * (W - L - R), Y = v => T + (1 - v / 12) * (H - T - B);
+  let g = `<rect x="${L}" y="${Y(12)}" width="${W - L - R}" height="${Y(6) - Y(12)}" fill="rgba(242,157,56,.12)" /><rect x="${L}" y="${Y(6)}" width="${W - L - R}" height="${Y(3) - Y(6)}" fill="rgba(242,157,56,.06)" />`;
+  for (let v = 0; v <= 12; v += 3) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(30,58,95,.12)" /><text x="${L - 6}" y="${Y(v) + 4}" font-size="11" font-family="JetBrains Mono" fill="#4d6680" text-anchor="end">${v}</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#5b93cf" stroke-width="2" stroke-dasharray="6 5" />`;
+  const pts = S.map(s => `${X(s.t).toFixed(1)},${Y(s.d).toFixed(1)}`).join(' ');
+  g += `<polyline points="${pts}" fill="none" stroke="#1e3a5f" stroke-width="2.6" pathLength="1" style="stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 2.4s cubic-bezier(.16,1,.3,1)" id="ln" />`;
+  for (let t = 0; t <= 7200; t += 1800) g += `<text x="${X(t)}" y="${H - 8}" font-size="11" font-family="JetBrains Mono" fill="#4d6680" text-anchor="middle">${t / 3600}h</text>`;
+  chart.innerHTML = g;
+  new IntersectionObserver(([e]) => e.isIntersecting && (document.getElementById('ln').style.strokeDashoffset = 0), { threshold: .4 }).observe(chart);
+})();
+// Link-lost counters
+let p = 0, b = 0; setInterval(() => { p += 7; b += 7; proc.textContent = p.toLocaleString('en'); buf.textContent = b.toLocaleString('en'); }, reduce ? 2000 : 200);
+</script>
+</body>
+</html>

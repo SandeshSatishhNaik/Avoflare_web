@@ -1,0 +1,20 @@
+/* AVOFLARE intro loader: canvas draws curtain and logo; HTML carries the wordmark, progress and skip. */
+.av-loader { position: fixed; inset: 0; z-index: 1000; }
+.av-loader canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.av-loader .word {
+  position: absolute; left: 50%; translate: -50% 0; margin: 0;
+  font: 700 clamp(14px, 1rem + .6vw, 22px)/1 'Albert Sans', system-ui, sans-serif; letter-spacing: .62em; padding-left: .62em;
+  color: #eef4fb; white-space: nowrap;
+}
+.av-loader .word span { display: inline-block; opacity: 0; transform: translateY(10px); transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1); }
+.av-loader .word span.a { color: #8fbbe8; }
+.av-loader.is-in .word span { opacity: 1; transform: none; }
+.av-loader .bar { position: absolute; left: 50%; translate: -50% 0; width: min(180px, 40vw); height: 2px; border-radius: 2px; background: rgba(255,255,255,.14); overflow: hidden; }
+.av-loader .bar i { display: block; height: 100%; width: 100%; background: #9cc3ea; transform-origin: left; transform: scaleX(var(--prog, 0)); transition: transform .35s cubic-bezier(.16,1,.3,1); }
+.av-loader .skip {
+  position: absolute; right: 22px; bottom: 20px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.28);
+  background: rgba(255,255,255,.08); color: #eef4fb; font: 600 13px 'Albert Sans', system-ui, sans-serif; cursor: pointer;
+}
+.av-loader .skip:focus-visible { outline: 2.5px solid #9cc3ea; outline-offset: 3px; }
+.av-loader.is-opening .word, .av-loader.is-opening .bar, .av-loader.is-opening .skip { opacity: 0; transition: opacity .3s ease; }
+html.is-loading, html.is-loading body { overflow: hidden; }

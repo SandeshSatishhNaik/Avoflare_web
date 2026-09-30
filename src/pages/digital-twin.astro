@@ -4,9 +4,19 @@ import PageHead from '../components/PageHead.astro';
 import Stamp from '../components/Stamp.astro';
 import TrendChart from '../components/TrendChart.astro';
 import ProfileChart from '../components/ProfileChart.astro';
-import EngineTwin from '../components/islands/EngineTwin.jsx';
-import { SENSORS } from '../components/islands/sensors.js';
 import { missions } from '../data/site.js';
+
+// Illustrative sensor positions on the AI-generated engine image (percent of width/height), not measured locations.
+const SENSORS = [
+  { id: 'egt', label: 'EGT', name: 'Exhaust gas temperature', x: 25, y: 24 },
+  { id: 'turbo', label: 'TURBO', name: 'Turbocharger compressor', x: 52, y: 47 },
+  { id: 'cht', label: 'CHT', name: 'Cylinder head temperature', x: 58, y: 33 },
+  { id: 'rpm', label: 'RPM', name: 'Crankshaft and propeller speed', x: 76, y: 72 },
+  { id: 'oil', label: 'OIL', name: 'Oil pressure and temperature', x: 46, y: 74 },
+  { id: 'fuel', label: 'FUEL', name: 'Fuel flow', x: 33, y: 55 },
+  { id: 'vib', label: 'VIB', name: 'Vibration', x: 63, y: 58 },
+  { id: 'elec', label: 'ELEC', name: 'Alternator voltage and current', x: 17, y: 50 },
+];
 
 const modules = [
   ['Environment and mission', 'ISA atmosphere, ambient pressure, temperature and density; mission, altitude, airspeed and throttle profiles.', 'impl'],
@@ -20,20 +30,23 @@ const modules = [
 ] as const;
 ---
 <Base title="Digital twin" theme="dark" description="The AVOFLARE engine simulation: physics subsystems, ten mission profiles including high altitude, hot, cold and endurance, and how divergence from the healthy twin grows with wear.">
-  <PageHead title="A twin you can fly on any mission" lead="Our MATLAB/Simulink model simulates the engine from intake to propeller, flies it through ten mission profiles, and can inject any of 52 faults. Every faulted run has a healthy twin beside it, so a difference is always measurable." />
+  <PageHead img="clouds-sunset" title="A twin you can fly on any mission" lead="Our MATLAB/Simulink model simulates the engine from intake to propeller, flies it through ten mission profiles, and can inject any of 52 faults. Every faulted run has a healthy twin beside it, so a difference is always measurable." />
 
   <section class="section">
     <div class="wrap split twin-split">
+      <figure class="sensor-map" data-aperture>
+        <img src="/media/img/engine-2400.webp" srcset="/media/img/engine-1200.webp 1200w, /media/img/engine-2400.webp 2400w" sizes="(min-width: 960px) 60vw, 100vw" alt="Illustration of the UAV's engine nacelle with the cowling open, marked with the eight sensor groups" width="2400" height="1350" loading="lazy" />
+        {SENSORS.map(s => (
+          <span class="pin" style={`left:${s.x}%;top:${s.y}%`}><i></i><b class="num">{s.label}</b></span>
+        ))}
+        <figcaption class="sim-label">AI-generated illustration. Sensor positions are indicative, not measured.</figcaption>
+      </figure>
       <div class="stack">
-        <EngineTwin client:visible interactive lineMix={0.35} label="Representative engine model. Drag to rotate." />
-        <p class="sim-label">Representative engine model, not the TAPAS engine. Sensor points are approximate. Drag to rotate.</p>
-      </div>
-      <div class="stack">
-        <h2 class="display" style="font-size:var(--step-2)">Where the sensors sit</h2>
-        <ul class="legend">
+        <h2 class="caps" style="font-size:var(--step-3)" data-split>Where the sensors sit</h2>
+        <ul class="legend" data-reveal>
           {SENSORS.map(s => <li><span class="num tag">{s.label}</span>{s.name}</li>)}
         </ul>
-        <p class="muted">Points turn amber, then orange, when their reading drifts from the twin. On this page they show the healthy state; the <a href="/demo/">replay</a> shows them during the fault.</p>
+        <p class="muted" data-reveal>In the <a href="/demo/">replay</a> these readings drift from the twin as the turbocharger wears: EGT first, then the flag.</p>
       </div>
     </div>
   </section>
@@ -81,6 +94,13 @@ const modules = [
 </Base>
 <style>
   .twin-split { align-items: center; }
+  .sensor-map { position: relative; margin: 0; }
+  .sensor-map img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line-strong); }
+  .sensor-map figcaption { margin-top: var(--s-3); }
+  .pin { position: absolute; translate: -50% -50%; display: flex; align-items: center; gap: 6px; pointer-events: none; }
+  .pin i { width: 12px; height: 12px; border-radius: 50%; background: var(--steel-2); box-shadow: 0 0 0 4px rgba(111,160,218,.25), 0 0 18px rgba(111,160,218,.8); animation: pin 2.4s ease-in-out infinite; }
+  .pin b { font-size: 0.7rem; font-weight: 500; color: #fff; background: rgba(5,13,28,.75); padding: 1px 5px; border: 1px solid var(--line-strong); }
+  @keyframes pin { 50% { box-shadow: 0 0 0 9px rgba(111,160,218,0), 0 0 18px rgba(111,160,218,.8); } }
   @media (min-width: 960px) { .twin-split { grid-template-columns: 7fr 5fr; } }
   .legend { list-style: none; border-top: 1px solid var(--line); }
   .legend li { display: grid; grid-template-columns: 4.5rem 1fr; padding: 0.55rem 0; border-bottom: 1px solid var(--line); }

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · TAPAS-class wireframe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --haze: #f3f7fb; --cer: #4f8ccc; --cer-ink: #2f6aa8; --deep: #1b3556; --deep-2: #3f5873; --deep-3: #6a7f96; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: radial-gradient(120% 90% at 50% 40%, #ffffff 0%, var(--haze) 55%, #e4edf6 100%); color: var(--deep); font: 16px/1.5 'Albert Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; }
+  ::selection { background: var(--cer); color: #fff; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+  canvas:active { cursor: grabbing; }
+  header { position: fixed; left: clamp(16px, 4vw, 56px); top: clamp(18px, 4vh, 44px); pointer-events: none; }
+  header h1 { margin: 0; font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.6rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 800; }
+  header h1 em { font-style: italic; font-weight: 300; color: var(--cer-ink); }
+  header p { margin: 10px 0 0; max-width: 40ch; font-size: 14.5px; color: var(--deep-2); }
+  .tags { position: fixed; inset: 0; pointer-events: none; }
+  .tag { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 12.5px; font-weight: 600; color: var(--deep); opacity: 0; transition: opacity .6s var(--ease); will-change: transform; }
+  .tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--cer); box-shadow: 0 0 0 4px rgba(79,140,204,.18); flex: none; }
+  .tag span { padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.86); border: 1px solid #fff; box-shadow: 0 8px 20px -12px rgba(27,53,86,.45); }
+  .tag small { font-weight: 500; color: var(--deep-3); }
+  .tags.on .tag { opacity: 1; }
+  .leads { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity .6s var(--ease); }
+  .leads.on { opacity: 1; }
+  .leads line { stroke: #2f6aa8; stroke-width: 1; stroke-dasharray: 2 3; }
+  .leads circle { fill: #fff; stroke: #2f6aa8; stroke-width: 1.5; }
+  .tag::before { display: none; }
+  .bar { position: fixed; left: clamp(16px, 4vw, 56px); right: clamp(16px, 4vw, 56px); bottom: clamp(16px, 3.5vh, 36px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+  .path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--deep-2); }
+  .path li { display: inline-flex; align-items: center; gap: 10px; }
+  .path li + li::before { content: ''; width: 18px; height: 1.5px; background: var(--cer); }
+  .path b { color: var(--deep); font-weight: 700; }
+  .ctl { display: flex; gap: 8px; }
+  button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #fff; background: rgba(255,255,255,.85); color: var(--deep); font: 600 14px 'Albert Sans', system-ui, sans-serif; cursor: pointer; box-shadow: 0 10px 24px -16px rgba(27,53,86,.5); transition: transform .3s var(--ease), background .3s; }
+  button:hover { transform: translateY(-2px); background: #fff; }
+  button[aria-pressed="false"] { color: var(--deep-3); }
+  button:focus-visible { outline: 2.5px solid var(--cer-ink); outline-offset: 3px; }
+  .note { position: fixed; right: clamp(16px, 4vw, 56px); top: clamp(22px, 4.4vh, 48px); margin: 0; font-size: 12px; color: var(--deep-3); text-align: right; max-width: 30ch; }
+  a.back { position: fixed; left: 50%; top: 18px; translate: -50% 0; font-size: 13px; font-weight: 600; color: var(--deep-2); text-decoration: none; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.7); }
+  @media (max-width: 700px) { .note { display: none; } .path { display: none; } .tag small { display: none; } }
+</style>
+<script type="importmap">{ "imports": { "three": "../node_modules/three/build/three.module.js", "three/addons/": "../node_modules/three/examples/jsm/" } }</script>
+</head>
+<body>
+<header>
+  <h1>TAPAS-class UAV, <em>in wire.</em></h1>
+  <p>Drag to turn it. The blue path is how engine data travels on board: sensors, engine computer, CAN bus, edge unit, datalink.</p>
+</header>
+<p class="note">Illustrative model built for this site. Proportions approximate, wiring simplified.</p>
+<svg class="leads" id="leads" aria-hidden="true"></svg>
+<div class="tags" id="tags" aria-hidden="true"></div>
+<div class="bar">
+  <ol class="path" aria-label="Data path on board">
+    <li><b>Sensors</b>&nbsp;EGT · CHT · RPM · oil</li>
+    <li><b>ECU / FADEC</b></li>
+    <li><b>CAN bus</b></li>
+    <li><b>Edge AI unit</b>&nbsp;(designed)</li>
+    <li><b>Datalink</b></li>
+  </ol>
+  <div class="ctl">
+    <button id="redraw" type="button">Draw again</button>
+    <button id="wires" type="button" aria-pressed="true">Data path</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { buildTapas } from './kit/tapas-model.js';
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const { lineGeo, fillGeo, LINE_COUNT, X, ENG, GROUND, V, makeProps } = buildTapas(THREE);
+
+// ---------- scene
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.prepend(renderer.domElement);
+renderer.domElement.setAttribute('aria-label', 'Interactive wireframe model of a TAPAS-class UAV');
+renderer.domElement.setAttribute('role', 'img');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, .1, 200);
+const craft = new THREE.Group(); scene.add(craft);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb9cbe0, 2.2));
+const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(4, 10, 6); scene.add(sun);
+
+const clay = new THREE.MeshLambertMaterial({ color: 0xf6f9fc, transparent: true, opacity: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+craft.add(new THREE.Mesh(fillGeo, clay));
+const ink = new THREE.LineBasicMaterial({ color: 0x3f5873, transparent: true, opacity: .62 });
+const lines = new THREE.LineSegments(lineGeo, ink); craft.add(lines);
+
+// propellers: three blades each, spinning
+const props = makeProps(ink); props.forEach(g => craft.add(g));
+
+// ground shadow
+const sh = document.createElement('canvas'); sh.width = sh.height = 256;
+const sx = sh.getContext('2d'), gr = sx.createRadialGradient(128, 128, 0, 128, 128, 128);
+gr.addColorStop(0, 'rgba(27,53,86,.22)'); gr.addColorStop(.55, 'rgba(27,53,86,.08)'); gr.addColorStop(1, 'rgba(27,53,86,0)');
+sx.fillStyle = gr; sx.fillRect(0, 0, 256, 256);
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(13, 21), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false, opacity: 0 }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.set(0, GROUND, 0); craft.add(shadow);
+
+// ---------- data path: seen through the skin, x-ray style
+const wiresGroup = new THREE.Group(); craft.add(wiresGroup);
+const cer = 0x2f6aa8;
+const wireMat = new THREE.LineBasicMaterial({ color: cer, transparent: true, opacity: .9, depthTest: false });
+const boxMat = new THREE.LineBasicMaterial({ color: cer, transparent: true, opacity: .95, depthTest: false });
+const box = (c, s) => { const b = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(...s)), boxMat); b.position.copy(c); b.renderOrder = 3; wiresGroup.add(b); };
+const EDGE = V(X(2.6), .1, 0), LINK = V(X(1.8), .72, 0), BUS = V(X(5.7), .62, 0);
+box(EDGE, [.5, .26, .4]);
+const routes = [];
+const addRoute = pts => { const c = new THREE.CatmullRomCurve3(pts, false, 'centripetal', .2); const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(c.getPoints(60)), wireMat); l.renderOrder = 3; wiresGroup.add(l); routes.push(c); return c; };
+const sensorsAt = [];
+for (const z of ENG) {
+  const ecu = V(X(5.8), .26, z); box(ecu, [.34, .18, .2]);
+  const sensors = { EGT: V(X(6.9), .34, z), CHT: V(X(5.1), .58, z), RPM: V(X(4.5), .34, z + Math.sign(z) * .2), OIL: V(X(5.3), -.12, z) };
+  for (const [name, p] of Object.entries(sensors)) { addRoute([p, p.clone().lerp(ecu, .5).add(V(0, .05, 0)), ecu]); sensorsAt.push({ name, p, z }); }
+  addRoute([ecu, V(X(5.75), .5, z * .6), V(X(5.72), .54, z * .25), BUS]);
+}
+addRoute([BUS, V(X(4.2), .35, 0), EDGE]);
+addRoute([EDGE, V(X(2.3), .35, 0), V(X(2.0), .6, 0), LINK]);
+// sensor rings
+const ringGeo = new THREE.RingGeometry(.07, .1, 20);
+const ringMat = new THREE.MeshBasicMaterial({ color: cer, depthTest: false, transparent: true, side: THREE.DoubleSide });
+const rings = sensorsAt.map(s => { const m = new THREE.Mesh(ringGeo, ringMat); m.position.copy(s.p); m.renderOrder = 4; wiresGroup.add(m); return m; });
+// pulses: small dots that travel sensor → ECU → bus → edge → datalink
+const dotTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(47,106,168,1)'); g.addColorStop(.35, 'rgba(79,140,204,.9)'); g.addColorStop(1, 'rgba(79,140,204,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const pulses = Array.from({ length: 14 }, (_, i) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, depthTest: false, transparent: true })); s.scale.setScalar(.22); s.renderOrder = 5; wiresGroup.add(s);
+  return { s, route: routes[i % routes.length], t: Math.random() }; });
+wiresGroup.visible = false;
+
+// ---------- labels projected from 3D anchors
+const tagsEl = document.getElementById('tags');
+const TAGS = [
+  [V(X(5.1), .58, 1.65), 'Engine sensors', 'EGT · CHT · RPM · oil', -230, 120],
+  [V(X(5.8), .26, -1.65), 'ECU / FADEC', 'one per engine', 150, -110],
+  [V(X(5.72), .54, -.6), 'CAN bus', '', -60, -150],
+  [EDGE, 'Edge AI unit', 'designed', 170, 110],
+  [LINK, 'Datalink', 'to the ground station', 150, -40],
+].map(([p, t, s, dx, dy]) => { const d = document.createElement('div'); d.className = 'tag'; d.innerHTML = `<span>${t}${s ? ` <small>· ${s}</small>` : ''}</span>`; tagsEl.appendChild(d);
+  const svg = document.getElementById('leads'), ns = 'http://www.w3.org/2000/svg', ln = document.createElementNS(ns, 'line'), dot = document.createElementNS(ns, 'circle'); dot.setAttribute('r', 3.5); svg.append(ln, dot);
+  return { p, d, dx, dy, ln, dot }; });
+const leadsEl = document.getElementById('leads');
+const tmp = new THREE.Vector3();
+
+// ---------- camera, controls, sizing
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = .06; controls.enableZoom = false; controls.enablePan = false;
+controls.minPolarAngle = .35; controls.maxPolarAngle = 1.45;
+controls.autoRotate = !reduce; controls.autoRotateSpeed = .55;
+controls.target.set(0, 0, 0);
+// Overlay check: ?ref=<image>&cam=x,y,z&tgt=x,y,z&fov=deg&op=0..1 draws the model over a reference photo, camera fixed.
+const Q = new URLSearchParams(location.search), REF = Q.get('ref');
+const num = k => Q.get(k)?.split(',').map(Number);
+if (REF) {
+  document.body.style.background = `#fff url("${REF}") center / 100% 100% no-repeat`;
+  document.querySelectorAll('header, .note, .bar, .tags, .leads').forEach(el => el.style.display = 'none');
+  controls.enabled = false; if (num('up')) camera.up.set(...num('up')); if (num('cam')) camera.position.set(...num('cam')); if (num('fov')) camera.fov = num('fov')[0]; camera.lookAt(...(num('tgt') || [0, 0, 0]));
+  ink.opacity = .95; ink.color.set(Q.get('ink') || '#0b2a55');
+}
+function size() {
+  const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  if (REF) { camera.updateProjectionMatrix(); return; }
+  const dist = 25 / Math.pow(Math.min(1, camera.aspect / 1.5), .55); // narrow screens: crop the wingtips a little rather than shrink the aircraft // keep the 20 m span in frame on narrow screens
+  const dir = camera.position.clone().sub(controls.target); if (dir.lengthSq() < 1) dir.set(1, .52, .95);
+  camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist)); camera.updateProjectionMatrix();
+}
+addEventListener('resize', size); size();
+
+// ---------- draw-in sequence
+let t0 = performance.now();
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+let showWires = !REF;
+const wiresBtn = document.getElementById('wires');
+wiresBtn.onclick = () => { showWires = !showWires; wiresBtn.setAttribute('aria-pressed', showWires); };
+document.getElementById('redraw').onclick = () => { t0 = performance.now(); };
+
+let last = performance.now();
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const e = reduce || REF ? 10 : (now - t0) / 1000;
+  const pLines = ease(Math.min(1, e / 2.6)), pFill = Math.min(1, Math.max(0, (e - 1.6) / 1.4));
+  lineGeo.setDrawRange(0, Math.floor(LINE_COUNT * pLines / 2) * 2);
+  const cmax = REF ? +(Q.get('op') ?? .35) : 1;
+  clay.opacity = pFill * cmax; clay.transparent = clay.opacity < 1; clay.depthWrite = pFill > .5;
+  shadow.material.opacity = pFill;
+  props.forEach((g, i) => { g.visible = pLines > .98; g.rotation.x += (reduce ? 0 : 7) * dt * (i ? -1 : 1); });
+  const wiresOn = showWires && e > 3;
+  wiresGroup.visible = wiresOn;
+  tagsEl.classList.toggle('on', wiresOn); leadsEl.classList.toggle('on', wiresOn);
+  if (wiresOn) {
+    const k = Math.min(1, (e - 3) / .8); wireMat.opacity = .9 * k; boxMat.opacity = .95 * k; ringMat.opacity = k;
+    for (const q of pulses) { q.t += dt * (reduce ? 0 : .55); if (q.t > 1) { q.t -= 1; q.route = routes[Math.floor(Math.random() * routes.length)]; } q.route.getPointAt(q.t, q.s.position); q.s.material.opacity = Math.sin(q.t * Math.PI) * k; }
+    const pulse = 1 + Math.sin(now / 260) * .18; rings.forEach(r => { r.scale.setScalar(pulse); r.quaternion.copy(camera.quaternion); });
+  }
+  if (!REF) controls.update();
+  renderer.render(scene, camera);
+  if (wiresOn) for (const tg of TAGS) {
+    tmp.copy(tg.p).applyMatrix4(craft.matrixWorld).project(camera);
+    const ax = (tmp.x * .5 + .5) * innerWidth, ay = (-tmp.y * .5 + .5) * innerHeight, s = innerWidth < 700 ? .5 : 1;
+    const w = tg.w ||= tg.d.offsetWidth, lx = Math.min(innerWidth - w - 12, Math.max(12, ax + tg.dx * s - (tg.dx < 0 ? w : 0))), ly = ay + tg.dy * s;
+    tg.d.style.transform = `translate(${lx}px, ${ly - 13}px)`;
+    const ex = tg.dx < 0 ? lx + w : lx;
+    tg.ln.setAttribute('x1', ax); tg.ln.setAttribute('y1', ay); tg.ln.setAttribute('x2', ex); tg.ln.setAttribute('y2', ly);
+    tg.dot.setAttribute('cx', ax); tg.dot.setAttribute('cy', ay);
+  }
+});
+</script>
+</body>
+</html>

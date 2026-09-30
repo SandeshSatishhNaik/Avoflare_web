@@ -6,3 +6,10 @@ dist/
 .impeccable/review/
 *_white_mesh*.glb
 tapas_himalayan_runway_cinematic.mp4
+assets-incoming/
+Raw_images_and _Videos/
+# third-party renders, private team documents and tool state: not for the public repo
+UAV Wire diagram raw/
+security_plan.zip
+SIH2026-IDEA-Presentation-Avoflare.pdf
+.impeccable/

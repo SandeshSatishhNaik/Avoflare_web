@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project context
 
-This repository is the website for AVOFLARE, an aircraft engine-health and engineering-intelligence system for a UAV powered by a VRDE 180 HP / Austro AE300 diesel engine (the "TAPAS" simulation platform). The site is an Astro site with React islands (React Three Fiber for the 3D engine), hosted on Cloudflare Pages.
+This repository is the website for AVOFLARE, an aircraft engine-health and engineering-intelligence system for a UAV powered by a VRDE 180 HP / Austro AE300 diesel engine (the "TAPAS" simulation platform). The live site is a React-only app (Vite + React 19) in `site/`, ported from the approved demo `demos/home.html` (user decision 2026-09-30: React only, not Astro). The older Astro build in `src/` is superseded. Hosting: Cloudflare Pages. Motion: GSAP ScrollTrigger + SplitText and Lenis smooth scroll. There is no 3D model on the site.
 
 Audience: problem-statement evaluators first, then students, faculty and the general public. Structure content so an evaluator can map every requirement (A–F, deliverables, innovation areas) of Problem Statement 26054 to where AVOFLARE addresses it.
 
@@ -16,6 +16,7 @@ Source material (read these before writing any technical copy):
 - `project detaild/Avoflare_GCS__AI.md` — ground side. GCS AI has three domains: the Operational System (Digital Twin → CAM → BDI → Causal Reasoning → Evidence Competition → World Model → Prognostics → PPM → Decision Engine → Knowledge Engine → Engineering Intelligence → Confidence → 3D Visualization → Engineer), EIR (Engineering Intelligence Repository) and Sentinel. A human engineer keeps final authority.
 - `REPO_AUDIT.md` — what the simulation repository implements, what is only designed, known result bugs, and which images are usable. Read before writing any results copy.
 - https://github.com/abhishekpj0902-apj/AVOFLARE_MATLAB (local copy: `E:\Avoflare_web_Matlab\AVOFLARE_MATLAB`; newer demo runs in `E:\Avoflare_web_Matlab\TAPAS_FINAL_AI_DATASET_V4-20260925T141334Z-1-001\TAPAS_FINAL_AI_DATASET_V4`, see `REPO_AUDIT.md` §5) — MATLAB/Simulink simulation: subsystem folders `01_Environment_Mission` to `08_Flight_Control`, `run_*.m` entry points (CAN telemetry, digital twin, fault simulation, health analytics, MRO, mission replay, dashboard), and architecture, requirements and validation docs under `00_Project/`.
+- https://github.com/abhishekpj0902-apj/TAPAS_UAV_DIGITAL_TWIN (local copy: `E:\Avoflare_web_Matlab\TAPAS_UAV_DIGITAL_TWIN`) — second, newer MATLAB project (runs V45–V58.1 in `experiment_manager/TAPAS_RESULTS/`: mission, integrated physics, CAN packetisation, health thresholds, fault schedule). Its AI/MRO files are empty and its final run is not physically valid; read `REPO_AUDIT.md` §5b before using any number.
 
 The approved sitemap, milestones and open items live in `PLAN.md`. Follow it; update it when a decision changes.
 
@@ -28,18 +29,26 @@ Use the terminology from these documents exactly (ETPR, CanonicalTelemetryState,
 
 ## Commands
 
+- `cd site && npm run dev` — React site dev server (Vite). `npm run build` builds to `site/dist` (Cloudflare Pages: root `site`, build `npm run build`, output `dist`). Media come from the shared `../public` folder.
+- React site layout: `site/src/sections/*.jsx` (one component per page section, markup), `site/src/site.js` (all page behaviour, run once after render from `App.jsx`), `site/src/hero.js`, `site/src/loader.js`, `site/src/styles/site.css`, `site/how-it-works.html` (the Three.js scene, second Vite entry, embedded in section 02).
+
 - `npm run dev` — Astro dev server (http://localhost:4321).
 - `npm run build` — static build to `dist/` (deploy target: Cloudflare Pages, build command `npm run build`, output `dist`).
 - `npm run preview` — serve the built site.
+- `node scripts/grade-media.mjs [id ...]` — grade ("Night Navy"), de-watermark, upscale and encode the AI-generated media from `Raw_images_and _Videos/` (gitignored) into `public/media/v` and `public/media/img`. Add new clips or stills to its CLIPS/STILLS lists.
+- `node --max-old-space-size=4096 scripts/export-built.mjs` — regenerate `src/data/built.json` (What we built: mission profile, phases, CAN frames) from the TAPAS_UAV_DIGITAL_TWIN runs (override with `TAPAS_DT_RESULTS`).
 - `node scripts/export-data.mjs` — regenerate `src/data/mission.json`, `can.json`, `trend.json` from the TAPAS V4 CSVs (override the source folder with `TAPAS_V4_DIR`). Run after the simulation is fixed or re-run; it prints channel ranges so implausible data is visible before publishing.
 
 ## Code map
 
 - `src/pages/*.astro` — the 10 pages + 404. Dark pages: home, digital-twin, whats-new, fault-response, demo. Light pages: problem, how-it-works, validation, roadmap, resources (theme set per page via `Base.astro` `theme` prop → `html[data-theme]`).
 - `src/data/site.js` — all shared copy: nav, glossary, requirement coverage, sensors, faults, chains, missions. Edit content here, not in pages.
-- `src/components/islands/` — React islands: `MissionFilm` (home scroll story, GSAP ScrollTrigger, 7 chapters), `EngineTwin` (React Three Fiber, lazy-loaded; `public/models/engine.glb` is meshopt-compressed), `ReplayDashboard`, `LinkLoss`, `RoleSwitch`, `DivergenceChart`. Shared data helpers and the illustrative watch/flag bands live in `lib.js`.
+- `src/pages/index.astro` — home: crossfading hero reel with scene thumbnails, statement, `FilmChapters.astro` (7 full-screen chapters over graded media, each with real simulated evidence and a "Continue" button), aircraft/ground panels, evidence rows, status rows, gallery, index.
+- Shared components: `Media.astro` (full-bleed graded video or still), `PageHead.astro` (cinematic head band, takes `img` or `video`), `Header.astro` (quick links + full-screen `<dialog>` menu), `Footer.astro` (closing image band + footer).
+- `src/components/islands/` — React islands: `DivergenceChart`, `LinkLoss`, `ReplayDashboard`, `RoleSwitch`. Shared data helpers and the illustrative watch/flag bands live in `lib.js`.
+- `src/scripts/motion.js` — the one motion language: Lenis, `[data-split]` line reveals, `[data-letters]` letter reveals, `[data-reveal]`, `[data-aperture]`, `[data-parallax]`, `.sweep`, `[data-count]`, `[data-next]`, in-view video playback. Reduced motion: no smooth scroll or reveals; videos stay on posters.
 - `src/styles/global.css` holds tokens (navy/steel brand, state colours ok/watch/fault, Archivo + Martian Mono); `islands.css` styles the islands.
-- Media in `public/`: hero illustration `media/uav-runway.webp`, OG image, logo variants for dark/light, engine GLB. Origins in `public/media/PROVENANCE.md`.
+- Media in `public/media/`: graded clips `v/*.mp4` (+ `-720.mp4`, `.webp` poster), stills `img/*-2400.webp` / `-1200.webp`, OG image; logos in `public/brand/`. Origins in `public/media/PROVENANCE.md`. Redesign decisions: `REDESIGN_BRIEF.md`, `SITE_PLAN.md`; asset prompts: `PROMPTS.md`.
 
 ## Communication mode
 

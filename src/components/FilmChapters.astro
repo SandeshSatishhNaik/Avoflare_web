@@ -1,0 +1,170 @@
+---
+// Home mission film: seven full-screen chapters, each over its own graded clip or still,
+// each carrying one piece of real simulated evidence. "Continue" moves to the next chapter.
+import Media from './Media.astro';
+import Icon from './Icon.astro';
+import DivergenceChart from './islands/DivergenceChart.jsx';
+import LinkLoss from './islands/LinkLoss.jsx';
+import { mission, can, sampleAt, stateOf, stateLabel, fmt, SAMPLES, SIM_NOTE } from './islands/lib.js';
+
+const peak = Math.max(...SAMPLES.map(s => s.dEgt ?? 0));
+const chtMin = Math.min(...SAMPLES.map(s => s.dCht ?? 0));
+const climb = sampleAt(2400);
+const hot = sampleAt(5400);
+const hotState = stateOf(hot.dEgt ?? 0);
+const frames = can[2].frames.filter(f => parseInt(f.id, 16) <= 0x10b);
+
+const sensors = [
+  ['EGT', 'Exhaust gas temperature', `${fmt.n(hot.egt)} °C`],
+  ['CHT', 'Cylinder head temperature', `${fmt.n(hot.cht)} °C`],
+  ['RPM', 'Crankshaft speed', `${fmt.n(hot.rpm)}`],
+  ['OIL', 'Oil temperature', `${fmt.n(hot.oilT)} °C`],
+  ['FUEL', 'Fuel flow', `${fmt.n(hot.fuel, 1)} kg/h`],
+  ['TURBO', 'Compressor wear (injected)', `${Math.round((hot.sev ?? 0) * 100)} %`],
+];
+const etpr = ['acquire', 'validate', 'decode', 'convert', 'fault check', 'range check', 'freshness', 'features', 'canonical state'];
+const edge = ['PINN twin', 'EKF', 'K-means', 'SNN', 'QR-DQN', 'Safety'];
+const gcs = ['Digital Twin', 'CAM', 'BDI', 'Causal Reasoning', 'Evidence Competition', 'World Model', 'Prognostics', 'PPM', 'Decision Engine', 'Engineer'];
+
+const chapters = [
+  { id: 'climb', title: 'Take‑off', media: { video: 'film-takeoff' },
+    body: `The UAV leaves a high mountain runway and climbs to ${fmt.n(climb.alt)} m. Outside air falls below ${fmt.n(Math.round(climb.amb))} °C and thins; the engine works harder to hold power.` },
+  { id: 'engine', title: 'Inside the engine', media: { img: 'nacelle' },
+    body: 'Sensors watch speed, cylinder head and exhaust temperature, oil, fuel, vibration, the alternator and the turbocharger. One hour in, the simulation starts wearing the turbocharger compressor.' },
+  { id: 'can', title: 'On the CAN bus', media: { img: 'engine' },
+    body: 'Every reading leaves the engine control unit as an 8-byte CAN frame. These are real frames from the simulated run: 17 message IDs, 0x100 to 0x110.' },
+  { id: 'edge', title: 'The edge decides', media: { video: 'film-cruise' },
+    body: 'On board, ETPR checks and decodes each frame into one CanonicalTelemetryState. The Edge AI compares the engine with its healthy twin, and exhaust gas starts running hotter than the twin says it should.' },
+  { id: 'link', title: 'Link lost', media: { video: 'film-night' },
+    body: 'The downlink drops. Nothing on board stops: the edge keeps deciding and buffers what it would have sent, then catches up when the link returns.' },
+  { id: 'base', title: 'At the base', media: { video: 'reel-station' },
+    body: 'The ground chain asks what changed, why, and what happens next: divergence, candidate causes, evidence, prognosis and a proposed action.' },
+  { id: 'engineer', title: 'The engineer decides', media: { img: 'runway-blue' },
+    body: 'The case ends as a maintenance log entry with its evidence attached. The system proposes; the engineer signs.' },
+];
+---
+<section class="film theme-dark" id="film" aria-labelledby="film-title">
+  <h2 id="film-title" class="visually-hidden">One mission, from sensor to engineer</h2>
+  {chapters.map((c, i) => (
+    <article class={`chapter ch-${c.id}`} id={`ch-${c.id}`} aria-labelledby={`ch-${c.id}-t`}>
+      <Media {...c.media} scrim="left" kenburns={!!c.media.img} parallax />
+      <div class="gridlines" aria-hidden="true"></div>
+      <div class="wrap chapter-grid">
+        <div class="chapter-text">
+          <p class="chapter-no num">Chapter {String(i + 1).padStart(2, '0')} / 07</p>
+          <h3 id={`ch-${c.id}-t`} class="caps chapter-title" data-letters>{c.title}</h3>
+          <p class="chapter-body" data-reveal>{c.body}</p>
+          {i < chapters.length - 1
+            ? <button class="continue" type="button" data-next={`#ch-${chapters[i + 1].id}`}><span>Continue</span><Icon name="arrow-down" /></button>
+            : <div class="chapter-cta"><a class="btn btn-primary" href="/demo/">Replay this mission</a><a class="btn btn-glass" href="/fault-response/">Follow the fault response</a></div>}
+        </div>
+
+        <div class="chapter-panel" data-reveal="0.15">
+          {c.id === 'climb' && (
+            <dl class="readouts">
+              <div class="readout"><dt class="readout-label">Altitude</dt><dd class="readout-value num">{fmt.n(climb.alt)}<small> m</small></dd></div>
+              <div class="readout"><dt class="readout-label">Outside air</dt><dd class="readout-value num">{fmt.n(climb.amb, 1)}<small> °C</small></dd></div>
+              <div class="readout"><dt class="readout-label">Airspeed</dt><dd class="readout-value num">{fmt.n(climb.tas)}<small> m/s</small></dd></div>
+              <div class="readout"><dt class="readout-label">Mission time</dt><dd class="readout-value num">T+{fmt.time(2400)}</dd></div>
+            </dl>
+          )}
+          {c.id === 'engine' && (
+            <ul class="sensor-rows">
+              {sensors.map(([tag, name, val]) => <li><span class="num tag">{tag}</span><span>{name}</span><span class="num val">{val}</span></li>)}
+            </ul>
+          )}
+          {c.id === 'can' && (
+            <div class="table-scroll">
+              <p class="panel-head num">T+{fmt.time(can[2].t)} · {frames.length} of 17 frames</p>
+              <table class="can-table">
+                <thead><tr><th>ID</th><th>Message</th><th>Data (8 bytes)</th></tr></thead>
+                <tbody>
+                  {frames.map(f => (
+                    <tr class={f.name.includes('FAULT') || f.name.includes('DEVIATION') ? 'can-diag' : ''}>
+                      <td class="num">{f.id}</td><td>{f.name.replaceAll('_', ' ').toLowerCase()}</td>
+                      <td class="num bytes">{f.bytes.join(' ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {c.id === 'edge' && (
+            <div class="stack">
+              <div>
+                <p class="panel-head">ETPR <span class="stamp stamp-design">designed</span></p>
+                <ol class="chips">{etpr.map(x => <li>{x}</li>)}</ol>
+                <p class="panel-head">Edge AI <span class="stamp stamp-design">designed</span></p>
+                <ol class="chips">{edge.map(x => <li>{x}</li>)}</ol>
+              </div>
+              <DivergenceChart client:visible from={2400} to={7200} compact title="EGT above the healthy twin" />
+              <p class={`panel-state state state-${hotState}`}>At T+{fmt.time(5400)}: +{fmt.n(hot.dEgt, 1)} °C · {stateLabel[hotState]}</p>
+            </div>
+          )}
+          {c.id === 'link' && <LinkLoss client:visible compact />}
+          {c.id === 'base' && (
+            <div class="stack">
+              <ol class="chips chips-chain">{gcs.map(x => <li>{x}</li>)}</ol>
+              <ul class="role-rows">
+                <li><strong>Operator</strong><span>EGT flagged, engine still within limits, mission can continue.</span></li>
+                <li><strong>Propulsion engineer</strong><span>Trend deviation from the twin; candidate causes and their evidence.</span></li>
+                <li><strong>Maintenance</strong><span>Proposed inspection and window, waiting for engineer approval.</span></li>
+              </ul>
+              <p class="stamp stamp-design">ground chain: designed architecture</p>
+            </div>
+          )}
+          {c.id === 'engineer' && (
+            <article class="techlog" aria-label="Example maintenance log entry">
+              <header><span>Tech log, example output</span><span class="num">{mission.source.uav} (simulated)</span></header>
+              <dl>
+                <dt>Mission time</dt><dd class="num">T+{fmt.time(mission.faultStart)} onwards</dd>
+                <dt>Component</dt><dd>Turbocharger compressor</dd>
+                <dt>Finding</dt><dd>EGT up to <b class="num">+{peak.toFixed(1)} °C</b> above the healthy twin, CHT <span class="num">{chtMin.toFixed(1)} °C</span>, sustained after onset: a trend deviation.</dd>
+                <dt>Proposed action</dt><dd>Inspect the turbocharger compressor at the next maintenance window.</dd>
+                <dt>Sign-off</dt><dd><span class="state state-watch">Pending engineer approval</span></dd>
+              </dl>
+            </article>
+          )}
+        </div>
+      </div>
+      <p class="chapter-note">{i === 0 ? SIM_NOTE : 'Scene: AI-generated illustration · data: simulated'}</p>
+    </article>
+  ))}
+</section>
+
+<style>
+  .film { background: var(--navy-950); }
+  .chapter { position: relative; min-height: 100svh; display: flex; align-items: center; isolation: isolate; overflow: hidden; border-top: 1px solid var(--line); }
+  .chapter :global(.media) { z-index: -1; }
+  .chapter-grid { position: relative; z-index: 2; display: grid; gap: var(--s-7); padding-block: calc(var(--nav-h) + var(--s-6)) var(--s-9); align-items: center; }
+  @media (min-width: 1000px) { .chapter-grid { grid-template-columns: 5fr 6fr; } }
+  .chapter-no { font-size: 0.78rem; color: var(--steel-3); letter-spacing: 0.08em; }
+  .chapter-title { font-size: clamp(2.4rem, 1.2rem + 4.4vw, 5.6rem); margin-top: var(--s-4); max-width: 13ch; }
+  .chapter-body { margin-top: var(--s-5); font-size: var(--step-1); line-height: 1.5; color: var(--ink-2); max-width: 44ch; }
+  .continue { margin-top: var(--s-7); display: inline-flex; align-items: center; gap: var(--s-3); background: none; border: 0; padding: 0; cursor: pointer; font-size: 0.8rem; font-weight: 650; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
+  .continue :global(svg) { width: 44px; height: 44px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 50%; transition: translate 400ms var(--ease-out), border-color 200ms; }
+  .continue:hover :global(svg) { translate: 0 4px; border-color: var(--ink); }
+  .chapter-cta { margin-top: var(--s-7); display: flex; flex-wrap: wrap; gap: var(--s-3); }
+  .chapter-panel { padding: var(--s-5); border: 1px solid var(--line-strong); background: rgba(5, 13, 28, 0.62); backdrop-filter: blur(16px) saturate(1.2); box-shadow: 0 30px 80px -30px rgba(0,0,0,.7); min-width: 0; }
+  .chapter-note { position: absolute; right: var(--gutter); bottom: var(--s-4); z-index: 2; font-size: 0.74rem; color: var(--ink-3); max-width: 60ch; text-align: right; }
+  .panel-head { font-size: 0.8rem; color: var(--ink-2); display: flex; gap: var(--s-2); align-items: center; margin-bottom: var(--s-2); }
+  .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: var(--s-4); }
+  .chips li { font-size: 0.8rem; padding: 0.3rem 0.6rem; border: 1px dashed var(--line-strong); color: var(--ink-2); }
+  .chips-chain li:last-child { border: 1px solid var(--fault); color: var(--ink); }
+  .readouts { margin: 0; }
+  .readouts dd { margin: 0; }
+  .sensor-rows, .role-rows { list-style: none; border-top: 1px solid var(--line); }
+  .sensor-rows li { display: grid; grid-template-columns: 4.2rem 1fr auto; gap: var(--s-3); padding: 0.7rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .sensor-rows .tag { color: var(--steel-3); font-size: 0.74rem; }
+  .sensor-rows li:first-child .val, .sensor-rows li:last-child .val { color: var(--watch); }
+  .role-rows li { display: grid; gap: 0.15rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+  .role-rows span { color: var(--ink-2); }
+  .bytes { letter-spacing: 0.08em; color: var(--ink); white-space: nowrap; }
+  .panel-state { margin-top: var(--s-2); }
+  @media (max-width: 999px) {
+    .chapter { align-items: flex-end; }
+    .chapter-grid { padding-block: calc(var(--nav-h) + 30svh) var(--s-8); }
+    .chapter-note { position: static; padding: 0 var(--gutter) var(--s-4); text-align: left; }
+    .chapter { flex-direction: column; align-items: stretch; justify-content: flex-end; }
+  }
+</style>

@@ -1,11 +1,16 @@
 ---
-interface Props { title: string; lead: string }
-const { title, lead } = Astro.props;
+import Media from './Media.astro';
+// Cinematic page head: full-bleed graded media, wide caps title, one lead line. Always dark, on every page theme.
+interface Props { title: string; lead: string; img?: string; video?: string; note?: boolean }
+const { title, lead, img, video, note = true } = Astro.props;
 ---
-<header class="page-head">
+<header class="page-head theme-dark">
+  <Media img={img} video={video} scrim="left" kenburns={!!img} eager parallax />
+  <div class="gridlines" aria-hidden="true"></div>
   <div class="wrap">
-    <h1 class="display">{title}</h1>
-    <p class="lead">{lead}</p>
+    <h1 class="caps" data-split>{title}</h1>
+    <p class="lead" data-reveal>{lead}</p>
     <slot />
   </div>
+  {note && <p class="ai-note">AI-generated illustration</p>}
 </header>

@@ -113,6 +113,35 @@ The turbo compressor wear series (10 → 40 → 50 → 60 %) shows EGT divergenc
 
 The bugs from section 3 are still present in every Drive run: healthy-reference torque and brake power are 0, mass airflow is 0, and MAP divergence is 0 even for turbo compressor wear (boost pressure should drop when the compressor wears; an engineer should check the intake/turbo coupling).
 
+## 5b. Second repository: TAPAS_UAV_DIGITAL_TWIN (audited 2026-09-29)
+
+Source: https://github.com/abhishekpj0902-apj/TAPAS_UAV_DIGITAL_TWIN (one commit `2b37c0e`, 2026-09-29; 832 files, 3.2 GB). Local copy: `E:\Avoflare_web_Matlab\TAPAS_UAV_DIGITAL_TWIN`. It is a separate, newer MATLAB project (versions V45–V58.1), not a copy of AVOFLARE_MATLAB.
+
+**What it adds**
+- A run pipeline with one results folder per run (`experiment_manager/TAPAS_RESULTS/`, 23 runs dated 16–18 Sep 2026). The chain is V46 environment + mission, V47/V49 integrated physics, V50 demand-aware health, V51 CAN packetisation, V52 health refinement, V53–V54 sensor fusion with fault injection, V55 health score + RUL, V56 maintenance decision, V57 flight-behaviour fault monitor, and V58/V58.1 flight dynamics. Each run has a text report, CSV/MAT/XLSX data and plots.
+- CAN is modelled as classical CAN frames with 8-byte DLC and 6 message IDs (0x100 engine, 0x110 propulsion, 0x120 flight, 0x130 environment, 0x140 health, 0x150 mission); V51 wrote 864,006 frames. The report itself says these are software representations; hardware validation would need a real controller and a DBC file.
+- The V46 mission is SURVEILLANCE_2H: 7,200 s at a 0.05 s step (144,001 samples), up to 1,700 m and 45 m/s, with wind, turbulence and rain. It covers about 300 km.
+- V57 has a scheduled fault sequence, one 720 s window each: engine power loss, high EGT, low oil pressure, high vibration, RPM sensor bias, airspeed sensor bias and propulsion thrust loss.
+- V52 records explicit health thresholds. Examples: EGT warning 700–800 °C and critical 800–900 °C (the two V52 reports disagree); CHT 120/150 °C; oil temperature 110/130 °C; startup grace 60 s; persistence 1–2 s.
+- The `TAPAS_UAV_GUI.m` MATLAB app is 1,424 lines.
+- The repo root has three architecture / call-tree diagrams (PNG, AI-generated style) and data contracts `TAPAS_DATA_CONTRACT_V2` (475 fields).
+
+**What is still missing or broken (do not publish as results)**
+- **No AI.** All four `ai_mro/*.m` files (feature extraction, anomaly detection, health monitor, MRO decision) are empty. So are `V53_RUN_MANAGER.m` (named as the main entry point in the diagrams) and 47 of 197 `.m` files overall, including 10 of 11 tests. The diagrams show modules that have no code behind them.
+- **RUL is not credible.** V55 reports an RUL of 913 trillion hours because the degradation rate is 0. V56 then reports 27.8 h from the same data. Its health score sits flat at 55 for 142,801 samples.
+- **The "final" run is not physically valid** (`TAPAS_FINAL_EXECUTION_DATA_V1.csv`, reported as PASS). Torque, fuel flow, boost and turbo temperature are all 0; shaft power peaks at 5.4 kW; RPM reaches 8,250 against a configured maximum of 2,800. No fault is injected (health 100 throughout).
+- **Engine parameters conflict between files.** One config says 3.0 L, 135 kW, 5,000 rpm; another says 1.991 L (the AE300 value), 120 kW, 2,800 rpm and is marked `NOT_CALIBRATED`. Run maxima range from 2,400 to 8,250 rpm.
+- **V58.1 ("corrected")** has EGT, CHT, oil pressure and vibration all NaN, so its only detected fault type is low thrust margin (12.7 % of samples).
+- **Small bugs:** the V46 phase table runs to 13,500 s in a 7,200 s mission; the V53 report file contains MATLAB source code instead of a report; V52 reports 0.000 g vibration.
+
+**Usable on the site, with "simulated" labels and an engineer's check first**
+- Mission profile (altitude, airspeed, phases, weather) from V46/V49.
+- CAN framing facts (IDs, DLC, frame counts) from V51.
+- V57's fault schedule as the list of injected fault scenarios.
+- V52 threshold logic, described in words rather than as numbers.
+
+None of the performance numbers (power, RPM, RUL, health %) should appear until the engine config is unified and the final run is fixed. The three root diagrams are reference material only; redraw anything needed.
+
 ## 6. What this means for the site
 
 Per page, what the repo can support today:

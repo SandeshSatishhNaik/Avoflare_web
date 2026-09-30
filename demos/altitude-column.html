@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · Altitude Column v2 (Sky Atlas demo)</title>
+<meta name="description" content="AVOFLARE: an engine digital twin for a MALE UAV's piston engine. Fly the simulated mission from runway to cloud deck and back." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --haze: #f3f7fb; --sky: #cfe3f4; --cer: #4f8ccc; --cer-ink: #2f6aa8; --deep: #1b3556; --deep-2: #3f5873; --deep-3: #6a7f96; --sun: #e08a1e; --sun-soft: #f4a547;
+    --glass: linear-gradient(160deg, rgba(255,255,255,.82), rgba(255,255,255,.55));
+    --glass-edge: rgba(255,255,255,.95); --hair: rgba(27,53,86,.12);
+    --p: 0; --alt: 0;
+    --sans: 'Albert Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1); --r: 26px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+  body { margin: 0; color: var(--deep); font-family: var(--sans); font-size: 17.5px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip;
+    background: linear-gradient(180deg, color-mix(in srgb, #b6d3ef calc(var(--alt) * 100%), var(--haze)) 0%, color-mix(in srgb, var(--sky) calc(30% + var(--alt) * 50%), var(--haze)) 100%) fixed; }
+  ::selection { background: var(--cer); color: #fff; }
+  :focus-visible { outline: 2.5px solid var(--cer-ink); outline-offset: 3px; border-radius: 8px; }
+  img, video, svg { display: block; max-width: 100%; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1200px); margin-inline: auto; }
+  .glass { background: var(--glass); backdrop-filter: blur(22px) saturate(1.35); -webkit-backdrop-filter: blur(22px) saturate(1.35); border: 1px solid var(--glass-edge); border-radius: var(--r);
+    box-shadow: 0 1px 0 #fff inset, 0 36px 80px -42px rgba(27,53,86,.5); }
+  .lift { transition: transform .7s var(--ease), box-shadow .7s var(--ease); }
+  .lift:hover { transform: translateY(-5px); box-shadow: 0 1px 0 #fff inset, 0 60px 110px -44px rgba(27,53,86,.55); }
+
+  /* Atmosphere: sun, two cloud depths drifting and leaning away from the pointer */
+  .sky { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .sunorb { position: absolute; right: -6vmin; top: calc(46vh - var(--alt) * 38vh); width: 44vmin; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,247,230,.95), rgba(255,229,178,.45) 45%, rgba(255,229,178,0)); opacity: calc(.35 + var(--alt) * .5); }
+  .layer { position: absolute; inset: 0; transition: transform 1.4s var(--ease); }
+  .layer i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,0)); filter: blur(6px); animation: drift linear infinite; }
+  .layer.near i { background: radial-gradient(closest-side, rgba(255,255,255,.9), rgba(255,255,255,0)); filter: blur(14px); }
+  @keyframes drift { from { transform: translateX(-40vw); } to { transform: translateX(140vw); } }
+
+  /* Top bar + mobile altitude progress */
+  .nav { position: fixed; top: 14px; left: 50%; translate: -50% 0; z-index: 30; width: min(100% - 24px, 1080px); display: flex; align-items: center; gap: 22px; padding: 8px 8px 8px 16px; border-radius: 999px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--deep); }
+  .brand img { width: 30px; height: auto; }
+  .brand b { letter-spacing: .26em; font-weight: 800; font-size: 13.5px; }
+  .nav ul { list-style: none; display: flex; gap: 4px; margin: 0 0 0 auto; padding: 0; }
+  .nav ul a { display: block; padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--deep-2); text-decoration: none; transition: background .3s, color .3s; }
+  .nav ul a:hover, .nav ul a.on { background: rgba(255,255,255,.85); color: var(--deep); }
+  .nav .cta { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--deep); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; }
+  .progress { position: absolute; left: 18px; right: 18px; bottom: -1px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--cer) calc(var(--p) * 100%), transparent 0); }
+  @media (max-width: 900px) { .nav ul { display: none; } .nav .cta { margin-left: auto; } }
+
+  /* Flight plan: the altitude rail is the navigation */
+  .plan { position: fixed; right: clamp(10px, 1.6vw, 26px); top: 50%; translate: 0 -50%; z-index: 25; height: min(62vh, 520px); width: 150px; }
+  .plan .rail { position: absolute; right: 0; top: 0; bottom: 0; width: 2px; background: var(--hair); border-radius: 2px; }
+  .plan .rail::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--p) * 100%); background: var(--cer); border-radius: 2px; }
+  .plan ol { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .plan li a { position: relative; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; margin-right: -6px; color: var(--deep-3); text-decoration: none; font-size: 12.5px; font-weight: 600; border-radius: 999px; transition: color .3s, background .3s; }
+  .plan li a::after { content: ''; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--deep-3); background: var(--haze); flex: none; transition: all .3s var(--ease); }
+  .plan li a span { white-space: nowrap; }
+  .plan li a small { font: 500 11px var(--mono); color: var(--deep-3); }
+  .plan li a:hover, .plan li a.on { color: var(--deep); background: rgba(255,255,255,.8); }
+  .plan li a.on::after { border-color: var(--cer); background: var(--cer); box-shadow: 0 0 0 4px rgba(79,140,204,.25); }
+  .plan .ac { position: absolute; right: 160px; bottom: calc(var(--p) * 100%); translate: 0 50%; padding: 5px 10px; border-radius: 999px; background: var(--deep); color: #fff; font: 600 12px var(--mono); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .plan:not(:hover) .ac { opacity: 1; }
+  @media (max-width: 1100px) { .plan { display: none; } }
+
+  main { position: relative; z-index: 2; }
+  .band { position: relative; min-height: 96svh; display: grid; align-items: center; padding: 12vh 0; }
+  .grid2 { display: grid; gap: clamp(28px, 4vw, 56px); align-items: center; }
+  @media (min-width: 1000px) { .grid2 { grid-template-columns: 1fr 1fr; padding-right: 150px; } .flip > :first-child { order: 2; } }
+  .alt-label { display: inline-flex; align-items: center; gap: 10px; font: 600 13px var(--mono); color: var(--cer-ink); }
+  .alt-label::before { content: ''; width: 22px; height: 2px; background: currentColor; }
+  h1, h2 { text-wrap: balance; margin: 0; letter-spacing: -0.035em; font-weight: 800; color: var(--deep); }
+  h1 { font-size: clamp(2.9rem, 1.4rem + 5vw, 6.2rem); line-height: .95; }
+  h1 em, h2 em { font-style: italic; font-weight: 400; color: var(--cer-ink); }
+  h2 { font-size: clamp(2.1rem, 1.3rem + 2.8vw, 3.9rem); line-height: 1; margin: 14px 0 18px; }
+  p.body { color: var(--deep-2); margin: 0; max-width: 52ch; }
+  .note { font-size: 13px; color: var(--deep-3); margin-top: 12px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 999px; font-weight: 700; text-decoration: none; transition: transform .3s var(--ease), background .3s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-deep { background: var(--deep); color: #fff; }
+  .btn-glass { color: var(--deep); background: rgba(255,255,255,.7); border: 1px solid #fff; }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* Hero */
+  .hero { min-height: 100svh; display: grid; align-items: end; overflow: hidden; position: relative; padding: 0; }
+  .hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.32) saturate(.72) contrast(.86); transform: scale(1.06); animation: settle 14s var(--ease) forwards; }
+  @keyframes settle { to { transform: scale(1); } }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(243,247,251,.3), rgba(243,247,251,0) 38%, rgba(243,247,251,.2) 70%, var(--haze)); }
+  .hero .inner { position: relative; z-index: 2; padding-bottom: 10vh; }
+  .hero .panel { padding: clamp(26px, 3vw, 44px); max-width: 700px; }
+  .hero .lede { color: var(--deep-2); font-size: clamp(1.08rem, 1rem + .3vw, 1.25rem); margin: 20px 0 26px; max-width: 46ch; }
+  .hero .meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; font-size: 13px; color: var(--deep-3); }
+  .cue { position: absolute; z-index: 2; left: 50%; bottom: 18px; translate: -50% 0; font: 600 11px var(--mono); letter-spacing: .12em; color: var(--deep-2); display: grid; justify-items: center; gap: 6px; }
+  .cue i { width: 1.5px; height: 34px; background: linear-gradient(var(--deep-2), transparent); animation: cue 2.2s var(--ease) infinite; transform-origin: top; }
+  @keyframes cue { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+  .photo { border-radius: var(--r); overflow: hidden; aspect-ratio: 4 / 3; box-shadow: 0 40px 80px -40px rgba(27,53,86,.5); }
+  .photo img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.3) saturate(.78) contrast(.9); transition: transform 1.6s var(--ease); }
+  .photo:hover img { transform: scale(1.04); }
+  .twin-fact { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 26px; }
+  .twin-fact div { padding: 16px 18px; border-radius: 18px; }
+  .twin-fact b { display: block; font: 600 1.35rem var(--mono); }
+  .twin-fact span { font-size: 14px; color: var(--deep-2); }
+
+  .panel-pad { padding: 26px; }
+  .read { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0; background: var(--hair); border-radius: 18px; overflow: hidden; }
+  .read div { background: rgba(255,255,255,.78); padding: 16px 18px; }
+  .read dt { font-size: 13px; color: var(--deep-2); }
+  .read dd { margin: 4px 0 0; font: 600 clamp(1.3rem, 1.1rem + .6vw, 1.7rem)/1.1 var(--mono); white-space: nowrap; }
+  .flow { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 18px 0 0; padding: 0; font-size: 13.5px; }
+  .flow li { padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid var(--hair); font-weight: 600; }
+  .flow li.arrow { background: none; border: 0; padding: 0; color: var(--deep-3); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px dashed var(--deep-3); color: var(--deep-2); }
+
+  /* Fault chart */
+  .fault { padding: 12vh 0; }
+  .fault .head { display: grid; gap: 20px; align-items: end; margin-bottom: 28px; }
+  @media (min-width: 1000px) { .fault .head { grid-template-columns: 1.2fr .8fr; padding-right: 150px; } }
+  .grow { font: 700 clamp(3rem, 2rem + 4vw, 6rem)/1 var(--mono); letter-spacing: -0.04em; color: var(--sun); text-align: right; }
+  .grow small { display: block; font: 600 13px var(--sans); letter-spacing: 0; color: var(--deep-2); margin-top: 8px; }
+  .chartcard { padding: clamp(18px, 2.4vw, 32px); }
+  @media (min-width: 1000px) { .chartcard { margin-right: 150px; } }
+  .chartcard svg { width: 100%; height: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 14px; font-size: 13.5px; color: var(--deep-2); }
+  .legend i { display: inline-block; width: 24px; vertical-align: middle; margin-right: 8px; border-top: 3px solid var(--deep); }
+  .legend i.twin { border-top: 2.5px dashed var(--cer); }
+  .legend i.bandkey { border-top: 10px solid rgba(224,138,30,.25); }
+  .verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+  @media (min-width: 1000px) { .verdicts { margin-right: 150px; } }
+  @media (max-width: 700px) { .verdicts { grid-template-columns: 1fr; } }
+  .verdicts div { padding: 16px 18px; border-radius: 18px; }
+  .verdicts b { display: block; font: 600 1.3rem var(--mono); }
+  .verdicts b.sun { color: var(--sun); }
+  .verdicts span { font-size: 14px; color: var(--deep-2); }
+
+  /* Link lost */
+  .lost { padding: 28px; }
+  .lost svg { width: 100%; height: auto; margin: 6px 0 12px; }
+  .lost .arc { fill: none; stroke: var(--cer); stroke-width: 2.5; stroke-dasharray: 2 9; stroke-linecap: round; }
+  .lost .cut { stroke: var(--sun); stroke-width: 3; stroke-linecap: round; }
+  .counters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .counters div { padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.78); }
+  .counters b { display: block; font: 600 1.8rem var(--mono); }
+  .counters span { font-size: 13.5px; color: var(--deep-2); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--mono); color: var(--sun); }
+  .status::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+
+  /* The case */
+  .log { padding: 28px; }
+  .log header { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 700; color: var(--deep-2); padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
+  .log dl { display: grid; grid-template-columns: 9rem 1fr; gap: 10px 18px; margin: 16px 0 0; font-size: 15.5px; }
+  .log dt { color: var(--deep-2); }
+  @media (max-width: 600px) { .log dl { grid-template-columns: 1fr; gap: 2px; } .log dd { margin-bottom: 10px; } .roles li { grid-template-columns: 1fr; gap: 2px; } }
+  .log dd { margin: 0; }
+  .sign { margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--deep-3); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .sign .line { flex: 1; height: 1px; background: var(--deep-3); margin: 0 12px; }
+  .sign b { color: var(--sun); font-size: 14px; }
+  .roles { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 8px; }
+  .roles li { display: grid; grid-template-columns: 9.5rem 1fr; gap: 12px; padding: 12px 16px; border-radius: 14px; background: rgba(255,255,255,.62); font-size: 14.5px; }
+  .roles strong { font-weight: 700; }
+  .roles span { color: var(--deep-2); }
+
+  /* Evidence */
+  .evidence { padding: 10vh 0; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
+  @media (min-width: 1000px) { .stats { margin-right: 150px; } }
+  @media (max-width: 800px) { .stats { grid-template-columns: 1fr 1fr; } }
+  .stats a { display: grid; gap: 4px; padding: 22px; border-radius: 22px; text-decoration: none; color: inherit; }
+  .stats b { font: 700 clamp(2.4rem, 1.8rem + 2vw, 3.6rem)/1 var(--mono); letter-spacing: -0.04em; }
+  .stats span { font-size: 14.5px; color: var(--deep-2); }
+
+  /* Landing */
+  .landing { position: relative; min-height: 88svh; display: grid; align-items: center; overflow: hidden; margin-top: 6vh; }
+  .landing img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.28) saturate(.78) contrast(.9); }
+  .landing::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, var(--haze), rgba(243,247,251,0) 30%, rgba(243,247,251,0) 70%, rgba(243,247,251,.6)); }
+  .landing .panel { position: relative; z-index: 2; padding: clamp(26px, 3vw, 44px); max-width: 640px; }
+  footer { position: relative; z-index: 2; background: rgba(255,255,255,.72); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid #fff; padding: 40px 0 34px; font-size: 14px; color: var(--deep-2); }
+  footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; }
+  footer img { width: 150px; }
+  details.about { margin-top: 24px; padding: 18px 22px; border-radius: 18px; background: rgba(255,255,255,.7); border: 1px solid #fff; }
+  details.about summary { cursor: pointer; font-weight: 700; color: var(--deep); }
+  details.about ul { margin: 12px 0 0; padding-left: 18px; }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 40; font: 700 13px var(--sans); padding: 10px 16px; border-radius: 999px; color: var(--deep); text-decoration: none; }
+
+  /* Reveal: supporting blocks rise in sequence inside each band */
+  .rv { opacity: 0; transform: translateY(34px); transition: opacity 1.1s var(--ease), transform 1.1s var(--ease); transition-delay: calc(var(--i, 0) * 110ms); }
+  .in .rv, .rv.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .rv { opacity: 1; transform: none; transition: none; }
+    .layer i, .cue i, .status::before, .hero video { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><div class="sunorb"></div><div class="layer" id="far"></div><div class="layer near" id="near"></div></div>
+
+<header class="nav glass" role="banner">
+  <a class="brand" href="#top" aria-label="AVOFLARE, back to top"><img src="../public/brand/mark-128.png" alt="" width="30" height="30" /><b>AVOFLARE</b></a>
+  <nav aria-label="Sections"><ul id="topnav"><li><a href="#runway">Twin</a></li><li><a href="#climb">Telemetry</a></li><li><a href="#fault">The fault</a></li><li><a href="#deck">Link lost</a></li><li><a href="#base">The case</a></li></ul></nav>
+  <a class="cta" href="#fault">See the fault</a>
+  <span class="progress" aria-hidden="true"></span>
+</header>
+
+<nav class="plan" aria-label="Flight plan: jump to a phase of the mission">
+  <div class="rail"></div>
+  <ol id="plan">
+    <li><a href="#base"><span>Base</span><small>0 m</small></a></li>
+    <li><a href="#deck"><span>Cloud deck</span><small>4 000 m</small></a></li>
+    <li><a href="#fault"><span>Cruise</span><small>4 000 m</small></a></li>
+    <li><a href="#climb"><span>Climb</span><small>3 333 m</small></a></li>
+    <li><a href="#runway"><span>Runway</span><small>0 m</small></a></li>
+  </ol>
+  <div class="ac" id="ac" aria-hidden="true">0 m</div>
+</nav>
+
+<main id="top">
+  <section class="hero" aria-labelledby="h1">
+    <video src="../public/media/v/reel-clouds.mp4" poster="../public/media/v/reel-clouds.webp" autoplay muted loop playsinline aria-hidden="true"></video>
+    <div class="wrap inner">
+      <div class="panel glass rv">
+        <h1 id="h1">Engine health that <em>survives a lost link.</em></h1>
+        <p class="lede">Fly one mission with a MALE UAV. At every altitude its piston engine is compared, on board, with a healthy twin of itself, whether or not the ground is listening.</p>
+        <div class="btns">
+          <a class="btn btn-deep" href="#runway">Begin the climb <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+          <a class="btn btn-glass" href="#fault">Skip to the fault</a>
+        </div>
+        <p class="meta"><span>Problem Statement 26054</span><span>Simulated data · TAPAS V4</span><span>Imagery: AI-generated</span></p>
+      </div>
+    </div>
+    <div class="cue" aria-hidden="true">SCROLL TO CLIMB<i></i></div>
+  </section>
+
+  <section class="band" id="runway" data-t="0" aria-labelledby="h-runway">
+    <div class="wrap grid2">
+      <figure class="photo lift rv" style="margin:0"><img src="../public/media/img/runway-blue-1200.webp" alt="Illustration: the twin-engine UAV on a mountain runway at blue hour" loading="lazy" /></figure>
+      <div>
+        <p class="alt-label rv">0 m · RUNWAY</p>
+        <h2 id="h-runway" class="rv" style="--i:1">Every flight <em>flies twice.</em></h2>
+        <p class="body rv" style="--i:2">Before take-off, the simulation flies the same mission once more with no fault. That healthy twin travels beside the real run second by second, so every reading has an expected value to be measured against.</p>
+        <div class="twin-fact">
+          <div class="glass rv" style="--i:3"><b class="num">1 : 1</b><span>a healthy reference run beside every faulted run</span></div>
+          <div class="glass rv" style="--i:4"><b class="num">0.0 °C</b><span>difference while the engine is healthy</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band flip" id="climb" data-t="2400" aria-labelledby="h-climb">
+    <div class="wrap grid2">
+      <div class="glass panel-pad lift rv">
+        <dl class="read" id="read"></dl>
+        <ol class="flow" aria-label="Telemetry path on the aircraft">
+          <li>CAN frames</li><li class="arrow" aria-hidden="true">→</li><li>ETPR</li><li class="arrow" aria-hidden="true">→</li><li>CanonicalTelemetryState</li><li class="arrow" aria-hidden="true">→</li><li>Edge AI</li>
+        </ol>
+        <p class="note">Values simulated at T+00:40:00. <span class="tag">ETPR and Edge AI: designed</span></p>
+      </div>
+      <div>
+        <p class="alt-label rv">3 333 m · CLIMB</p>
+        <h2 id="h-climb" class="rv" style="--i:1">Thin air, <em>a working engine.</em></h2>
+        <p class="body rv" style="--i:2">Outside air drops below −7 °C. Every sensor leaves the engine as an 8-byte CAN frame; ETPR validates, decodes and stamps each value into one CanonicalTelemetryState, the single trusted snapshot the Edge AI reads.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="fault" id="fault" data-t="5400" aria-labelledby="h-fault">
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <p class="alt-label rv">4 000 m · CRUISE</p>
+          <h2 id="h-fault" class="rv" style="--i:1">One hour in, <em>the exhaust runs warm.</em></h2>
+          <p class="body rv" style="--i:2">The simulation starts wearing the turbocharger compressor. Exhaust gas climbs above what the twin expects, crosses the watch band and gets flagged. The engine stays within its limits; the trend is what matters.</p>
+        </div>
+        <div class="grow rv" style="--i:3" aria-live="polite"><span id="grow">+0.0 °C</span><small>EGT above the healthy twin</small></div>
+      </div>
+      <figure class="chartcard glass rv" style="margin:0;--i:2">
+        <svg id="chart" viewBox="0 0 1000 380" role="img" aria-label="Exhaust gas temperature above the healthy twin across the two hour mission. Flat at zero until one hour, then rising to about 10.6 degrees."></svg>
+        <figcaption class="legend"><span><i></i>Simulated engine</span><span><i class="twin"></i>Healthy twin</span><span><i class="bandkey"></i>Watch 3 °C / flag 6 °C (illustrative bands)</span></figcaption>
+      </figure>
+      <div class="verdicts" id="verdicts"></div>
+    </div>
+  </section>
+
+  <section class="band flip" id="deck" data-t="6200" aria-labelledby="h-deck">
+    <div class="wrap grid2">
+      <div class="lost glass lift rv">
+        <p class="status">DOWNLINK LOST</p>
+        <svg viewBox="0 0 520 170" aria-hidden="true">
+          <path class="arc" d="M40 140 C 160 20, 360 20, 480 140" />
+          <line class="cut" x1="248" y1="40" x2="272" y2="64" /><line class="cut" x1="272" y1="40" x2="248" y2="64" />
+          <text x="40" y="162" font-size="13" font-family="Albert Sans" font-weight="700" fill="#1b3556">UAV · Edge AI</text>
+          <text x="480" y="162" font-size="13" font-family="Albert Sans" font-weight="700" fill="#1b3556" text-anchor="end">Ground station</text>
+        </svg>
+        <div class="counters"><div><b class="num" id="proc">0</b><span>frames still processed on board</span></div><div><b class="num" id="buf">0</b><span>buffered for the ground</span></div></div>
+        <p class="note">Illustrative counter. Edge AI chain: designed architecture.</p>
+      </div>
+      <div>
+        <p class="alt-label rv">CLOUD DECK · LINK LOST</p>
+        <h2 id="h-deck" class="rv" style="--i:1">Alone above the clouds. <em>Still deciding.</em></h2>
+        <p class="body rv" style="--i:2">The downlink drops. Nothing on board stops: the Edge AI keeps judging the engine against its twin and stores what it would have sent. Losing the link costs the ground's extra depth, never the aircraft's own judgement.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="base" data-t="7140" aria-labelledby="h-base">
+    <div class="wrap grid2">
+      <article class="log glass lift rv" aria-label="Maintenance log entry, example output">
+        <header><span>Tech log · example output</span><span class="num">UAV-E05 (simulated)</span></header>
+        <dl>
+          <dt>Mission time</dt><dd class="num">T+01:00:00 onwards</dd>
+          <dt>Component</dt><dd>Turbocharger compressor</dd>
+          <dt>Finding</dt><dd>EGT up to <b class="num">+10.6 °C</b> above the twin, CHT <span class="num">−0.55 °C</span>, sustained: a trend, not a spike</dd>
+          <dt>Candidate causes</dt><dd>Compressor wear; intake restriction</dd>
+          <dt>Proposed action</dt><dd>Inspect the compressor at the next maintenance window</dd>
+        </dl>
+        <div class="sign"><span>Engineer</span><span class="line"></span><b>Pending approval</b></div>
+      </article>
+      <div>
+        <p class="alt-label rv">0 m · BASE</p>
+        <h2 id="h-base" class="rv" style="--i:1">A case, <em>not an alarm.</em></h2>
+        <p class="body rv" style="--i:2">When the link returns, the ground chain builds the engineering case: what diverged, which causes could explain it, the evidence for each, and a proposed action. The system proposes; the engineer signs.</p>
+        <ul class="roles">
+          <li class="rv" style="--i:3"><strong>Operator</strong><span>EGT flagged, within limits, mission can continue.</span></li>
+          <li class="rv" style="--i:4"><strong>Propulsion engineer</strong><span>Trend deviation, candidate causes and their evidence.</span></li>
+          <li class="rv" style="--i:5"><strong>Maintenance</strong><span>Proposed inspection, waiting for sign-off.</span></li>
+        </ul>
+        <p class="note rv" style="--i:6"><span class="tag">GCS AI chain: designed architecture</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="evidence" aria-labelledby="h-ev">
+    <div class="wrap">
+      <p class="alt-label rv">BUILT AND RUNNING TODAY</p>
+      <h2 id="h-ev" class="rv" style="--i:1">The simulation behind <em>every number here.</em></h2>
+      <div class="stats">
+        <a class="glass lift rv" style="--i:2" href="#"><b class="num" data-count="52">52</b><span>fault types in the simulation library</span></a>
+        <a class="glass lift rv" style="--i:3" href="#"><b class="num" data-count="10">10</b><span>mission profiles, hot to high altitude</span></a>
+        <a class="glass lift rv" style="--i:4" href="#"><b class="num" data-count="17">17</b><span>CAN message IDs encoded and decoded</span></a>
+        <a class="glass lift rv" style="--i:5" href="#"><b class="num">2 h</b><span>mission replay with its healthy twin</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing" aria-labelledby="h-land">
+    <img src="../public/media/img/clouds-sunset-2400.webp" alt="" loading="lazy" />
+    <div class="wrap"><div class="panel glass rv">
+      <h2 id="h-land" style="margin-top:0">See the fault <em>before it grounds the aircraft.</em></h2>
+      <p class="body">Replay the two-hour mission, scrub through the fault, and see where every requirement of Problem Statement 26054 is covered.</p>
+      <div class="btns" style="margin-top:24px"><a class="btn btn-deep" href="#">Open the replay</a><a class="btn btn-glass" href="#">Requirement coverage</a></div>
+    </div></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="row"><img src="../public/brand/logo-on-light.png" alt="AVOFLARE" width="150" height="92" loading="lazy" /><span>Engine digital twin for the aero piston engine of a MALE UAV · Problem Statement 26054</span></div>
+    <p class="note">Charts use simulated data from the TAPAS MATLAB/Simulink model. Steps marked “designed” describe the architecture, not a running system. Photographic scenes are AI-generated illustrations.</p>
+    <details class="about"><summary>About this demo · Altitude Column v2</summary><ul>
+      <li>Sky Atlas world: daylight sky from haze white to cerulean, frosted cloud-glass panels, one warm sun colour reserved for the fault.</li>
+      <li>The flight-plan rail (right) is the navigation; its marker follows the real simulated altitude as you scroll: climb, cruise at 4 000 m, return.</li>
+      <li>New in v2: higher-contrast text on glass, top progress bar, telemetry path, labelled chart with edge verdicts, link-lost diagram, engineer's tech log with sign-off, evidence stats, landing call to action and footer.</li>
+      <li>Footage is your blue-hour video lightened with a CSS filter; the real build would regrade it to daylight.</li>
+    </ul></details>
+  </div>
+</footer>
+<a class="back glass" href="index.html">← All demos</a>
+
+<script src="data.js"></script>
+<script>
+const S = window.AV.s.slice(0, -1).map(r => ({ t: r[0], d: r[1], egt: r[2], cht: r[3], rpm: r[4], alt: r[5], ph: r[6] }));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fmt = t => `${String(Math.floor(t / 3600)).padStart(2, '0')}:${String(Math.floor(t % 3600 / 60)).padStart(2, '0')}`;
+const at = t => S.reduce((a, b) => Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a);
+const root = document.documentElement;
+
+// Clouds in two depths
+const cloudHTML = (n, top, big) => Array.from({ length: n }, () => `<i style="top:${top[0] + Math.random() * (top[1] - top[0])}%;width:${(big ? 38 : 22) + Math.random() * 26}vw;height:${(big ? 12 : 7) + Math.random() * 7}vw;animation-duration:${(big ? 45 : 90) + Math.random() * 60}s;animation-delay:-${Math.random() * 140}s;opacity:${.45 + Math.random() * .4}"></i>`).join('');
+far.innerHTML = cloudHTML(9, [5, 85], false); near.innerHTML = cloudHTML(4, [55, 95], true);
+if (!reduce) addEventListener('pointermove', e => { const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5; far.style.transform = `translate(${x * -18}px, ${y * -10}px)`; near.style.transform = `translate(${x * -56}px, ${y * -26}px)`; }, { passive: true });
+
+// Scroll maps onto mission time between sections; altitude comes from the simulated profile.
+const secs = [...document.querySelectorAll('[data-t]')];
+function onScroll() {
+  const y = scrollY + innerHeight * .5, max = document.documentElement.scrollHeight - innerHeight;
+  const tops = secs.map(s => s.offsetTop + s.offsetHeight * .5);
+  let t = 0;
+  if (y <= tops[0]) t = 0; else if (y >= tops.at(-1)) t = +secs.at(-1).dataset.t;
+  else for (let i = 0; i < tops.length - 1; i++) if (y >= tops[i] && y < tops[i + 1]) { const f = (y - tops[i]) / (tops[i + 1] - tops[i]); t = +secs[i].dataset.t + f * (secs[i + 1].dataset.t - secs[i].dataset.t); }
+  const s = at(t);
+  root.style.setProperty('--p', Math.min(1, scrollY / max).toFixed(3));
+  root.style.setProperty('--alt', (s.alt / 4000).toFixed(3));
+  ac.textContent = `${s.alt.toLocaleString('en')} m · T+${fmt(s.t)}`;
+}
+addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll); onScroll();
+
+// Active section in both navigations
+const links = [...document.querySelectorAll('#plan a, #topnav a')];
+const secIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === `#${e.target.id}`)); }), { rootMargin: '-45% 0px -50% 0px' });
+secs.forEach(s => secIO.observe(s));
+
+// Reveal in sequence
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+// Climb readouts
+const c = at(2400);
+read.innerHTML = [['Altitude', `${c.alt.toLocaleString('en')} m`], ['Engine speed', `${c.rpm.toLocaleString('en')} rpm`], ['Exhaust gas', `${c.egt} °C`], ['vs healthy twin', `+${c.d.toFixed(1)} °C`]].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+
+// Fault chart: drawn in, with the headline number growing alongside it
+(() => {
+  const W = 1000, H = 380, L = 54, R = 22, T = 22, B = 44, X = t => L + t / 7200 * (W - L - R), Y = v => T + (1 - v / 12) * (H - T - B);
+  const txt = (x, y, s, o = '') => `<text x="${x}" y="${y}" ${o}>${s}</text>`;
+  let g = `<rect x="${L}" y="${Y(12)}" width="${W - L - R}" height="${Y(6) - Y(12)}" fill="rgba(224,138,30,.13)" /><rect x="${L}" y="${Y(6)}" width="${W - L - R}" height="${Y(3) - Y(6)}" fill="rgba(224,138,30,.06)" />`;
+  for (let v = 0; v <= 12; v += 3) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(27,53,86,.1)" />` + txt(L - 10, Y(v) + 4, v, 'font-size="13" font-family="JetBrains Mono" fill="#3f5873" text-anchor="end"');
+  for (let t = 0; t <= 7200; t += 1800) g += txt(X(t), H - 14, `T+${fmt(t)}`, 'font-size="13" font-family="JetBrains Mono" fill="#3f5873" text-anchor="middle"');
+  g += txt(L - 10, T - 6, '°C', 'font-size="12" font-family="JetBrains Mono" fill="#3f5873" text-anchor="end"');
+  g += `<line x1="${X(3600)}" x2="${X(3600)}" y1="${T}" y2="${H - B}" stroke="#6a7f96" stroke-dasharray="3 6" />` + txt(X(3600) + 10, T + 18, 'compressor wear begins', 'font-size="14" font-family="Albert Sans" font-weight="700" fill="#1b3556"');
+  g += txt(W - R - 6, Y(6) - 8, 'flag', 'font-size="13" font-family="Albert Sans" font-weight="700" fill="#b36a10" text-anchor="end"') + txt(W - R - 6, Y(3) - 8, 'watch', 'font-size="13" font-family="Albert Sans" font-weight="700" fill="#b36a10" text-anchor="end"');
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#4f8ccc" stroke-width="2.5" stroke-dasharray="8 6" />` + txt(X(600), Y(0) - 10, 'healthy twin', 'font-size="13" font-family="Albert Sans" font-weight="600" fill="#2f6aa8"');
+  g += `<polyline id="ln" fill="none" stroke="#1b3556" stroke-width="3" stroke-linejoin="round" points="" /><circle id="dot" r="7" fill="#e08a1e" stroke="#fff" stroke-width="2.5" cx="${X(0)}" cy="${Y(0)}" /><g id="peak"></g>`;
+  chart.innerHTML = g;
+  const pk = S.reduce((a, b) => b.d > a.d ? b : a), w = S.find(s => s.d >= 3), f = S.find(s => s.d >= 6);
+  verdicts.innerHTML = [[`T+${fmt(w.t)}`, 'Watch: EGT 3 °C above the twin', 'sun'], [`T+${fmt(f.t)}`, 'Flagged by the edge: 6 °C and holding', 'sun'], [`+${pk.d.toFixed(1)} °C`, 'Peak divergence, engine still within limits', '']]
+    .map(([b, s, c], i) => `<div class="glass rv" style="--i:${i + 3}"><b class="${c}">${b}</b><span>${s}</span></div>`).join('');
+  verdicts.querySelectorAll('.rv').forEach(el => io.observe(el));
+  let k = 0, started = false;
+  const draw = n => {
+    document.getElementById('ln').setAttribute('points', S.slice(0, n + 1).map(s => `${X(s.t).toFixed(1)},${Y(s.d).toFixed(1)}`).join(' '));
+    const s = S[n], dot = document.getElementById('dot'); dot.setAttribute('cx', X(s.t)); dot.setAttribute('cy', Y(s.d));
+    grow.textContent = `+${s.d.toFixed(1)} °C`; grow.parentElement.style.fontSize = `clamp(2.6rem, ${1.6 + s.d / 10.6 * 2.6}rem + ${s.d / 10.6 * 3}vw, 6.4rem)`;
+    if (n === S.length - 1) document.getElementById('peak').innerHTML = txt(X(pk.t) - 12, Y(pk.d) - 14, `peak +${pk.d.toFixed(1)} °C`, 'font-size="14" font-family="JetBrains Mono" font-weight="600" fill="#b36a10" text-anchor="end"');
+  };
+  const step = () => { draw(k); if (++k < S.length) setTimeout(step, 22); };
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && !started) { started = true; reduce ? draw(S.length - 1) : step(); } }, { threshold: .35 }).observe(chart);
+})();
+
+// Link-lost counters (only while visible)
+(() => {
+  let p = 0, id;
+  new IntersectionObserver(([e]) => { clearInterval(id); if (e.isIntersecting) id = setInterval(() => { p += 9; proc.textContent = p.toLocaleString('en'); buf.textContent = p.toLocaleString('en'); }, reduce ? 1500 : 180); }).observe(document.getElementById('deck'));
+})();
+
+// Count-up stats
+document.querySelectorAll('[data-count]').forEach(el => {
+  const end = +el.dataset.count; el.textContent = reduce ? end : '0';
+  new IntersectionObserver(([e], o) => { if (!e.isIntersecting || reduce) return; o.disconnect(); const t0 = performance.now(); const tick = n => { const f = Math.min(1, (n - t0) / 1400); el.textContent = Math.round(end * (1 - Math.pow(1 - f, 4))); if (f < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }, { threshold: .6 }).observe(el);
+});
+</script>
+</body>
+</html>

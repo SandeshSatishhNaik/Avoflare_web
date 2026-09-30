@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · Wear Specimen (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f4f6f8; --ink: #101418; --ink-2: #56606b; --blue: #2f6bff; --grid: #c9d3dd; --heat: #e0662a;
+    --w: 0; /* compressor wear 0..50, driven by the slider */
+    --sans: 'Bricolage Grotesque', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: clip;
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 100% 48px, 48px 100%; background-position: 0 -1px, -1px 0; }
+  body::before { content: ''; position: fixed; inset: 0; background: color-mix(in srgb, var(--paper) 86%, transparent); z-index: -1; }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1320px); margin-inline: auto; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  img, svg { display: block; max-width: 100%; }
+
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1.5px solid var(--ink); font-size: 14px; }
+  .top b { letter-spacing: .24em; font-weight: 800; }
+  .top span { color: var(--ink-2); }
+
+  /* Hero: one reading, set enormous; its weight and width are the wear */
+  .hero { padding: 48px 0 24px; display: grid; gap: 12px; }
+  .readout { font-size: clamp(5rem, 1rem + 19vw, 21rem); line-height: .82; letter-spacing: -0.045em; margin: 0;
+    font-variation-settings: 'wght' calc(220 + var(--w) * 11.6), 'wdth' calc(100 - var(--w) * .5), 'opsz' 96;
+    color: color-mix(in srgb, var(--ink) calc(100% - var(--w) * 1.2%), var(--heat)); transition: font-variation-settings .25s var(--ease); white-space: nowrap; }
+  .readout { font-variant-numeric: tabular-nums; }
+  .readout small { font-size: .3em; letter-spacing: 0; font-variation-settings: 'wght' 400; color: var(--ink-2); margin-left: .1em; }
+  .cap { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 15px; color: var(--ink-2); }
+  .cap strong { color: var(--ink); }
+
+  /* The axis slider: glass track */
+  .axis { position: sticky; top: 12px; z-index: 10; margin: 24px 0 8px; padding: 18px 22px; border-radius: 20px;
+    background: rgba(255,255,255,.55); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid rgba(255,255,255,.9); box-shadow: 0 20px 50px -28px rgba(16,20,24,.35); display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; }
+  .axis label { font-weight: 700; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+  .axis output { font: 600 16px var(--mono); min-width: 5.5ch; text-align: right; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 36px; background: transparent; cursor: ew-resize; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--blue) calc(var(--w) * 2%), var(--grid) 0); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--blue) calc(var(--w) * 2%), var(--grid) 0); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 30px; height: 30px; margin-top: -13px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); box-shadow: 0 6px 16px rgba(16,20,24,.25); }
+  input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); }
+  .ticks { grid-column: 2; display: flex; justify-content: space-between; font: 12px var(--mono); color: var(--ink-2); margin-top: -8px; }
+
+  /* Specimen grid: each reading reacts to wear only as much as the simulation says it does */
+  section { padding: 72px 0; }
+  h2 { font-size: clamp(2rem, 1.2rem + 2.8vw, 3.8rem); line-height: 1; letter-spacing: -0.035em; margin: 0 0 16px; font-variation-settings: 'wght' 700, 'opsz' 96; max-width: 18ch; }
+  p.body { color: var(--ink-2); max-width: 58ch; margin: 0; }
+  .cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); border-left: 1px solid var(--grid); margin-top: 36px; background: rgba(255,255,255,.4); }
+  @media (max-width: 800px) { .cells { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .cell { border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); padding: 18px 18px 22px; min-height: 190px; display: grid; align-content: space-between; }
+  .cell .g { font-size: clamp(3rem, 2rem + 3vw, 5rem); line-height: .9; letter-spacing: -0.03em; transition: font-variation-settings .25s var(--ease), color .25s; }
+  .cell .k { font: 600 12px var(--mono); color: var(--ink-2); letter-spacing: .06em; }
+  .cell .v { font: 15px var(--mono); }
+  .cell .why { font-size: 13px; color: var(--ink-2); }
+
+  /* Loupe: frosted glass over the engine, warming with wear */
+  .loupe-wrap { display: grid; gap: 32px; align-items: center; margin-top: 36px; }
+  @media (min-width: 1000px) { .loupe-wrap { grid-template-columns: 1.2fr 1fr; } }
+  .loupe { position: relative; border-radius: 24px; overflow: hidden; aspect-ratio: 16/10; }
+  .loupe img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.35) saturate(.55) contrast(.9); }
+  .loupe .warm { position: absolute; inset: 0; background: radial-gradient(40% 50% at 28% 30%, rgba(224,102,42,.85), transparent 70%); opacity: calc(var(--w) / 55); mix-blend-mode: soft-light; transition: opacity .3s; }
+  .loupe .lens { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(62%, 420px); padding: 18px 20px; border-radius: 18px;
+    background: rgba(255,255,255,.5); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.9); }
+  .lens .lt { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+  .lens .lv { font-size: 2.4rem; line-height: 1.05; font-variation-settings: 'wght' calc(300 + var(--w) * 10), 'opsz' 48; }
+  .curve { padding: 20px; border-radius: 20px; background: rgba(255,255,255,.6); border: 1px solid #fff; }
+  .curve svg { width: 100%; height: auto; }
+  .curve .ref { fill: none; stroke: var(--grid); stroke-width: 1.5; }
+  .curve .live { fill: none; stroke: var(--ink); stroke-width: 3; }
+  .curve .ax { font: 11px var(--mono); fill: var(--ink-2); }
+  .note { font-size: 12.5px; color: var(--ink-2); margin-top: 10px; }
+
+  .about { margin: 20px 0 80px; padding: 26px 28px; border-radius: 20px; background: rgba(255,255,255,.6); border: 1px solid #fff; }
+  .about h3 { margin: 0 0 8px; font-variation-settings: 'wght' 700; }
+  .about ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 30; font: 600 13px var(--sans); padding: 10px 16px; border-radius: 999px; background: rgba(255,255,255,.7); backdrop-filter: blur(10px); border: 1px solid #fff; color: var(--ink); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>AVOFLARE</b><span>Wear specimen · turbocharger compressor · 2 h mission</span></div>
+
+  <header class="hero">
+    <h1 class="readout" id="big" aria-live="polite">+0.0<small>°C</small></h1>
+    <div class="cap">
+      <span><strong>Peak EGT above the healthy twin</strong> across the 2-hour mission</span>
+      <span id="capWear">at 0 % compressor wear</span>
+      <span>Simulated · TAPAS V4 runs at 10, 40 and 50 %; values between runs interpolated</span>
+    </div>
+  </header>
+
+  <div class="axis">
+    <label for="wear">Compressor wear</label>
+    <input id="wear" type="range" min="0" max="50" step="1" value="0" />
+    <output id="wOut" class="num">0 %</output>
+    <div class="ticks"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50 %</span></div>
+  </div>
+
+  <section>
+    <h2>Every reading, set in the weight of its evidence.</h2>
+    <p class="body">Drag the axis. A reading thickens only as much as the simulation says wear moves it. Exhaust gas responds strongly; cylinder heads barely; speed and oil not at all in this run. Showing what does not move is part of the honesty.</p>
+    <div class="cells" id="cells"></div>
+  </section>
+
+  <section style="padding-top:0">
+    <h2>Look closer: the engine warms, the twin does not.</h2>
+    <div class="loupe-wrap">
+      <div class="loupe">
+        <img src="../public/media/img/engine-1200.webp" alt="Illustration of the engine nacelle, exhaust side" />
+        <div class="warm"></div>
+        <div class="lens"><div class="lt">Exhaust, peak vs twin</div><div class="lv num" id="lensV">+0.0 °C</div><div class="note" id="lensN">Matches the twin</div></div>
+      </div>
+      <div class="curve">
+        <svg id="curve" viewBox="0 0 600 300" role="img" aria-label="EGT above the healthy twin over the mission, at the chosen wear"></svg>
+        <p class="note">Grey: the three real runs (10, 40, 50 %). Black: the curve at your chosen wear. Wear is injected from T+01:00.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="about">
+    <h3>About this direction · Wear Specimen</h3>
+    <ul>
+      <li>World: an interactive type specimen. One axis slider drives the whole page, the way a variable font's weight axis does.</li>
+      <li>Colours: cool paper with a blueprint grid, ink, one calm blue for the axis, and heat orange that grows only with wear.</li>
+      <li>Type: Bricolage Grotesque, a variable face whose weight and width axes literally carry the data. Mono only for values.</li>
+      <li>Glass: the sticky axis bar and the loupe over the engine. Motion: everything reflows as you drag; nothing moves on its own.</li>
+    </ul>
+  </div>
+</div>
+<a class="back" href="index.html">← All five demos</a>
+
+<script src="data.js"></script>
+<script>
+const T = window.AV.trend; // [{severity, points:[[t, dEgt]], maxDeltaEgt, maxDeltaCht}]
+const runs = [{ severity: 0, points: T[0].points.map(([t]) => [t, 0]), maxDeltaCht: 0 }, ...T];
+function curveAt(w) {
+  let a = runs[0], b = runs[runs.length - 1];
+  for (let i = 0; i < runs.length - 1; i++) if (w >= runs[i].severity && w <= runs[i + 1].severity) { a = runs[i]; b = runs[i + 1]; break; }
+  const f = b.severity === a.severity ? 0 : (w - a.severity) / (b.severity - a.severity);
+  return a.points.map(([t, v], i) => [t, v + ((b.points[i]?.[1] ?? v) - v) * f]);
+}
+const cells = [
+  ['EGT', 'Exhaust gas temp.', w => curvePeak(w), 'Moves strongly with wear.'],
+  ['CHT', 'Cylinder head temp.', w => 0.547 * w / 50, 'Barely moves (max 0.55 °C).'],
+  ['RPM', 'Crankshaft speed', () => 0, 'Unchanged in this run.'],
+  ['OIL', 'Oil pressure', () => 0, 'Constant in this run.'],
+  ['FUEL', 'Fuel flow', () => 0, 'No wear response shown.'],
+  ['MAP', 'Boost pressure', () => 0, 'Known sim bug: not yet responding.'],
+  ['VIB', 'Vibration', () => 0, 'Single level, constant.'],
+  ['LINK', 'Downlink', () => 0, 'Edge decides regardless.'],
+];
+function curvePeak(w) { return Math.max(...curveAt(w).map(p => p[1])); }
+const cellsEl = document.getElementById('cells');
+cellsEl.innerHTML = cells.map(([k, n]) => `<div class="cell"><span class="k">${k}</span><span class="g" data-k="${k}">${k}</span><div><div class="v" data-v="${k}">+0.0</div><div class="why">${n}</div></div></div>`).join('');
+
+function set(w) {
+  document.documentElement.style.setProperty('--w', w);
+  const p = curvePeak(w);
+  big.innerHTML = `+${p.toFixed(1)}<small>°C</small>`;
+  wOut.textContent = `${w} %`; capWear.textContent = `at ${w} % compressor wear`;
+  lensV.textContent = `+${p.toFixed(1)} °C`;
+  lensN.textContent = p >= 6 ? 'Past the flag band: flagged' : p >= 3 ? 'Inside the watch band' : 'Matches the twin';
+  cells.forEach(([k, , fn, why]) => {
+    const v = fn(w), g = cellsEl.querySelector(`[data-k="${k}"]`), vEl = cellsEl.querySelector(`[data-v="${k}"]`);
+    const norm = Math.min(1, v / 10.6);
+    g.style.fontVariationSettings = `'wght' ${Math.round(200 + norm * 600)}, 'opsz' 96`;
+    g.style.color = norm > .56 ? 'var(--heat)' : '';
+    vEl.textContent = v ? `+${v.toFixed(v < 1 ? 2 : 1)} °C` : '±0';
+    vEl.nextElementSibling.textContent = why;
+  });
+  drawCurve(w);
+}
+function drawCurve(w) {
+  const W = 600, H = 300, L = 36, R = 10, Tp = 12, B = 28, X = t => L + t / 7200 * (W - L - R), Y = v => Tp + (1 - v / 12) * (H - Tp - B);
+  const line = pts => pts.map(([t, v]) => `${X(t).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  let g = '';
+  for (let v = 0; v <= 12; v += 3) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#c9d3dd" /><text class="ax" x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  for (let t = 0; t <= 7200; t += 1800) g += `<text class="ax" x="${X(t)}" y="${H - 8}" text-anchor="middle">${t / 3600}h</text>`;
+  g += T.map(r => `<polyline class="ref" points="${line(r.points)}" />`).join('');
+  g += `<polyline class="live" points="${line(curveAt(w))}" style="stroke:${curvePeak(w) >= 6 ? '#e0662a' : '#101418'}" />`;
+  curve.innerHTML = g;
+}
+wear.addEventListener('input', () => set(+wear.value));
+// Open on 50 % so the first view shows the fault, then invite the drag.
+wear.value = 50; set(50);
+</script>
+</body>
+</html>

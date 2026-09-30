@@ -1,20 +1,39 @@
 ---
 import { nav } from '../data/site.js';
-interface Props { theme: 'dark' | 'light' }
-const { theme } = Astro.props;
+import Media from './Media.astro';
+import Icon from './Icon.astro';
+interface Props { closing?: boolean }
+const { closing = true } = Astro.props;
 ---
-<footer class="site-footer">
-  <div class="wrap">
-    <div class="stack">
-      <img src={theme === 'dark' ? '/brand/logo-on-dark.png' : '/brand/logo-on-light.png'} alt="AVOFLARE" width="180" height="110" style="width:180px;height:auto" />
-      <p>An engine digital twin and engineering-intelligence system for the aero piston engine of a MALE UAV, built for Problem Statement 26054.</p>
-      <p>Charts use simulated data from the TAPAS MATLAB/Simulink model. Steps marked "Designed" describe the architecture, not a running system.</p>
+{closing && (
+  <section class="closing theme-dark" aria-labelledby="closing-title">
+    <Media img="runway-night" scrim="left" parallax />
+    <div class="gridlines" aria-hidden="true"></div>
+    <div class="wrap">
+      <h2 id="closing-title" class="cadence" data-split>See the fault <em>before it grounds the aircraft.</em></h2>
+      <div class="actions" data-reveal>
+        <a class="btn btn-primary" href="/demo/"><Icon name="play" />Open the replay</a>
+        <a class="btn btn-glass" href="/problem/">See requirement coverage</a>
+      </div>
     </div>
-    <nav aria-label="Footer">
-      <ul>
-        <li><a href="/">Home</a></li>
-        {nav.map(n => <li><a href={n.href}>{n.label}</a></li>)}
-      </ul>
-    </nav>
+  </section>
+)}
+<footer class="site-footer theme-dark">
+  <div class="wrap">
+    <div class="top">
+      <div class="stack">
+        <img src="/brand/logo-on-dark.png" alt="AVOFLARE" width="180" height="110" style="width:160px;height:auto" loading="lazy" />
+        <p>An engine digital twin and engineering-intelligence system for the aero piston engine of a MALE UAV, built for Problem Statement 26054.</p>
+        <p>Charts use simulated data from the TAPAS MATLAB/Simulink model. Steps marked "Designed" describe the architecture, not a running system. Photographic scenes are AI-generated illustrations.</p>
+      </div>
+      <nav aria-label="Footer">
+        <ul>
+          <li><a href="/">Home</a></li>
+          {nav.map(n => <li><a href={n.href}>{n.label}</a></li>)}
+        </ul>
+      </nav>
+    </div>
+    <p class="wordmark" aria-hidden="true">AVOFLARE</p>
+    <div class="base"><span>Problem Statement 26054</span><span>Simulated data · AI-generated imagery · human engineer keeps final authority</span></div>
   </div>
 </footer>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · Load Paths (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,300..900;1,300..900&family=Chivo+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --concrete: #e6e8ea; --concrete-2: #d9dcdf; --carbon: #15171a; --ink-2: #555b61; --cord: #d3342b; --ash: #9aa0a6;
+    --sans: 'Chivo', system-ui, sans-serif; --mono: 'Chivo Mono', ui-monospace, monospace; --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--concrete); color: var(--carbon); font-family: var(--sans); font-size: 17px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  body::before { content: ''; position: fixed; inset: 0; z-index: -1; opacity: .35; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E"); }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1320px); margin-inline: auto; }
+  .num, .mono { font-family: var(--mono); }
+  img, svg { display: block; max-width: 100%; }
+  .glass { background: rgba(255,255,255,.5); backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1); border: 1px solid rgba(255,255,255,.85); border-radius: 14px; box-shadow: 0 24px 60px -34px rgba(21,23,26,.45); }
+
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; font-size: 14px; border-bottom: 1px solid var(--ash); }
+  .top b { letter-spacing: .24em; font-weight: 900; }
+
+  .hero { display: grid; gap: 40px; padding: 56px 0 40px; }
+  @media (min-width: 1080px) { .hero { grid-template-columns: .8fr 1.2fr; align-items: start; } }
+  h1 { font-size: clamp(2.6rem, 1.4rem + 4.2vw, 5.6rem); line-height: .96; letter-spacing: -0.035em; font-weight: 800; margin: 0; }
+  h1 em { font-style: italic; font-weight: 300; }
+  .lede { color: var(--ink-2); font-size: 1.15rem; max-width: 42ch; margin: 22px 0; }
+  .pull { display: inline-flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 22px; border-radius: 999px; border: 1.5px solid var(--carbon); background: var(--carbon); color: #fff; font: 700 15px var(--sans); cursor: pointer; transition: transform .3s var(--ease); }
+  .pull:hover { transform: translateY(-2px); }
+  .pull.ghost { background: transparent; color: var(--carbon); margin-left: 8px; }
+  .legend { margin-top: 26px; display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 30px; vertical-align: middle; margin-right: 8px; border-top: 3px solid var(--cord); }
+  .legend i.slack { border-top: 1.5px dashed var(--ash); }
+  .legend i.rod { border-top: 5px solid var(--carbon); }
+
+  .rig { position: relative; border-radius: 22px; overflow: hidden; aspect-ratio: 1.15 / 1; background: var(--concrete-2); }
+  .rig > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .28; filter: grayscale(1) brightness(1.6); }
+  .rig svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .rod { stroke: var(--carbon); stroke-width: 6; stroke-linecap: round; }
+  .cord { fill: none; stroke: var(--ash); stroke-width: 1.5; stroke-dasharray: 6 6; transition: stroke .4s; }
+  .cord.taut { stroke: var(--cord); stroke-dasharray: none; }
+  .node circle { fill: #fff; stroke: var(--carbon); stroke-width: 2; }
+  .node.sym circle { fill: var(--carbon); }
+  .node.hot circle { fill: var(--cord); stroke: var(--cord); }
+  .node text { font: 600 13px var(--mono); fill: var(--carbon); }
+  .node .sub { font: 400 11.5px var(--mono); fill: var(--ink-2); }
+  .node { cursor: pointer; }
+  .node:focus-visible circle { stroke-width: 4; }
+  .tag { position: absolute; right: 16px; bottom: 16px; width: min(330px, 70%); padding: 16px 18px; }
+  .tag h3 { margin: 0 0 6px; font-size: 16px; }
+  .tag p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .tag .force { font: 600 13px var(--mono); color: var(--cord); margin-top: 8px; }
+
+  section { padding: 80px 0; border-top: 1px solid var(--ash); }
+  h2 { font-size: clamp(2rem, 1.3rem + 2.4vw, 3.4rem); line-height: 1; letter-spacing: -0.03em; margin: 0 0 16px; font-weight: 800; max-width: 20ch; }
+  p.body { color: var(--ink-2); max-width: 60ch; margin: 0; }
+
+  .column { display: grid; gap: 0; margin-top: 40px; }
+  .member { display: grid; grid-template-columns: 9rem 1fr 7rem; gap: 20px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--ash); }
+  .member .bar { height: 6px; background: var(--concrete-2); border-radius: 6px; overflow: hidden; }
+  .member .bar i { display: block; height: 100%; width: var(--f); background: var(--cord); transform-origin: left; transform: scaleX(0); transition: transform 1.2s var(--ease); }
+  .member.in .bar i { transform: scaleX(1); }
+  .member .st { font: 600 12px var(--mono); text-align: right; }
+  .member small { display: block; color: var(--ink-2); font-size: 13px; }
+  .stamp { display: inline-block; font: 600 12px var(--mono); border: 1px dashed var(--ink-2); color: var(--ink-2); padding: 3px 8px; border-radius: 6px; }
+
+  .about { margin: 0 0 80px; padding: 26px 28px; }
+  .about h3 { margin: 0 0 8px; }
+  .about ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 30; font: 700 13px var(--sans); padding: 10px 16px; border-radius: 999px; color: var(--carbon); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>AVOFLARE</b><span>Load paths · from symptom to cause</span></div>
+
+  <header class="hero">
+    <div>
+      <h1>Every symptom is <em>held by a cause.</em></h1>
+      <p class="lede">A tensegrity column stands because each rod is held by a cord. AVOFLARE's ground chain reasons the same way: a deviation is a load, and it is traced along evidence cords to the causes that could hold it. None is forced to win; the engineer decides.</p>
+      <button class="pull" id="pull" type="button">Pull the EGT cord</button><button class="pull ghost" id="slack" type="button">Release</button>
+      <div class="legend">
+        <span><i class="rod"></i>Carbon rod: a measured symptom (simulated)</span>
+        <span><i></i>Taut cord: evidence that supports a cause</span>
+        <span><i class="slack"></i>Slack cord: evidence not engaged</span>
+      </div>
+    </div>
+    <div class="rig" id="rig">
+      <img src="../public/media/img/nacelle-1200.webp" alt="" />
+      <svg id="net" viewBox="0 0 800 700" role="img" aria-label="Network linking engine symptoms to candidate causes"></svg>
+      <div class="tag glass" id="tag" aria-live="polite"><h3>Select a node</h3><p>Pull the EGT cord, or click any node to read its evidence.</p></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Evidence competition, as forces you can read.</h2>
+    <p class="body">Each candidate cause carries the load the evidence puts on it. The bars below are the designed output shape: they show how strongly the simulated symptoms support each cause. They are illustrative, not computed by a running model yet.</p>
+    <div class="column" id="column"></div>
+    <p style="margin-top:18px"><span class="stamp">GCS AI · causal reasoning and evidence competition: designed architecture</span></p>
+  </section>
+
+  <div class="about glass">
+    <h3>About this direction · Load Paths</h3>
+    <ul>
+      <li>World: tensegrity sculpture. Symptoms are carbon rods, evidence is red cord, and the page's structure follows the load network rather than a grid.</li>
+      <li>Colours: pale concrete, carbon black, one red cord colour for engaged evidence, ash for slack.</li>
+      <li>Type: Chivo for words, Chivo Mono for values and labels pinned to nodes.</li>
+      <li>Glass: frosted evidence tags floating over the rig. Motion: cords tighten from slack to taut when you pull.</li>
+    </ul>
+  </div>
+</div>
+<a class="back glass" href="index.html">← All five demos</a>
+
+<script>
+const N = {
+  egt: { x: 170, y: 150, t: 'EGT', s: '+10.6 °C vs twin', sym: true, hot: true, d: 'Exhaust gas runs up to 10.6 °C above the healthy twin after one hour, and stays there: a trend, not a spike.' },
+  cht: { x: 400, y: 110, t: 'CHT', s: '−0.55 °C', sym: true, d: 'Cylinder heads run slightly cooler than the twin. Small, but consistent with less air mass through the core.' },
+  rpm: { x: 630, y: 150, t: 'RPM', s: 'unchanged', sym: true, d: 'Crankshaft speed is held: the engine still delivers its power setting.' },
+  wear: { x: 190, y: 470, t: 'Compressor wear', s: 'strong support', d: 'Hotter exhaust with slightly cooler heads at constant speed fits reduced compressor efficiency. (In simulation this is the injected fault.)' },
+  intake: { x: 420, y: 520, t: 'Intake restriction', s: 'partial support', d: 'A clogged filter also starves air and heats the exhaust, but usually shifts manifold pressure too. That channel is not yet reliable in the data.' },
+  sensor: { x: 640, y: 460, t: 'EGT sensor drift', s: 'weak', d: 'A drifting probe would move EGT alone. The small CHT change argues against it, but does not rule it out.' },
+  eng: { x: 420, y: 650, t: 'Engineer', s: 'final authority', d: 'The case arrives with every cause, its evidence and its weight. The engineer signs; the system proposes.' },
+};
+const rods = [['egt', 'cht'], ['cht', 'rpm']];
+const cords = [['egt', 'wear', .95], ['egt', 'intake', .6], ['egt', 'sensor', .3], ['cht', 'wear', .7], ['cht', 'intake', .45], ['cht', 'sensor', .15], ['rpm', 'wear', .2], ['wear', 'eng', .9], ['intake', 'eng', .6], ['sensor', 'eng', .3]];
+let pull = 0, target = 0;
+const net = document.getElementById('net');
+function path(a, b, sag) { const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 + sag; return `M${a.x} ${a.y} Q${mx} ${my} ${b.x} ${b.y}`; }
+function draw() {
+  let g = rods.map(([a, b]) => `<line class="rod" x1="${N[a].x}" y1="${N[a].y}" x2="${N[b].x}" y2="${N[b].y}" />`).join('');
+  g += cords.map(([a, b, f]) => { const engaged = pull * f; const sag = 90 * (1 - engaged); return `<path class="cord ${engaged > .45 ? 'taut' : ''}" d="${path(N[a], N[b], sag)}" style="stroke-width:${1.5 + engaged * 3}" />`; }).join('');
+  g += Object.entries(N).map(([k, n]) => `<g class="node ${n.sym ? 'sym' : ''} ${n.hot && pull > .3 ? 'hot' : ''}" data-k="${k}" tabindex="0" role="button" aria-label="${n.t}: ${n.s}"><circle cx="${n.x}" cy="${n.y}" r="${n.sym ? 12 : 16}" /><text x="${n.x}" y="${n.y - 24}" text-anchor="middle">${n.t}</text><text class="sub" x="${n.x}" y="${n.y + 34}" text-anchor="middle">${n.s}</text></g>`).join('');
+  net.innerHTML = g;
+}
+function animate() { pull += (target - pull) * .08; draw(); if (Math.abs(target - pull) > .002) requestAnimationFrame(animate); }
+document.getElementById('pull').onclick = () => { target = 1; show('egt'); animate(); };
+document.getElementById('slack').onclick = () => { target = 0; animate(); };
+function show(k) { const n = N[k]; tag.innerHTML = `<h3>${n.t}</h3><p>${n.d}</p><div class="force">${n.s}</div>`; }
+net.addEventListener('click', e => { const g = e.target.closest('.node'); if (g) show(g.dataset.k); });
+net.addEventListener('keydown', e => { const g = e.target.closest('.node'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); show(g.dataset.k); } });
+draw();
+new IntersectionObserver(([e]) => { if (e.isIntersecting && target === 0) { target = 1; animate(); } }, { threshold: .6 }).observe(document.getElementById('rig'));
+
+column.innerHTML = [['Compressor wear', 'EGT up, CHT slightly down, RPM held', .9, 'Strong'], ['Intake restriction', 'Same direction, but boost data not yet reliable', .55, 'Partial'], ['EGT sensor drift', 'Would move EGT alone; CHT change argues against', .25, 'Weak']]
+  .map(([n, why, f, st]) => `<div class="member"><div><strong>${n}</strong><small>${why}</small></div><div class="bar" style="--f:${f * 100}%"><i></i></div><div class="st">${st}</div></div>`).join('');
+const mio = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('in')), { threshold: .5 });
+document.querySelectorAll('.member').forEach(m => mio.observe(m));
+</script>
+</body>
+</html>

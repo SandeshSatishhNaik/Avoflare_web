@@ -1,13 +1,21 @@
 ---
 import Base from '../layouts/Base.astro';
+import Media from '../components/Media.astro';
 ---
-<Base title="Page not found" theme="dark" description="This page does not exist.">
-  <section class="section">
+<Base title="Page not found" theme="dark" closing={false} description="This page does not exist.">
+  <section class="lost theme-dark">
+    <Media img="runway-night" scrim="left" kenburns eager />
+    <div class="gridlines" aria-hidden="true"></div>
     <div class="wrap stack">
-      <p class="num muted">404 · signal missing</p>
-      <h1 class="display" style="font-size:var(--step-4)">No frame on this address.</h1>
+      <p class="num muted">404 · no frame on this address</p>
+      <h1 class="cadence" style="font-size:var(--step-5)">Lost the link? <em>The aircraft didn't.</em></h1>
       <p class="lead">The page you asked for does not exist. Start from the mission, or open the replay.</p>
-      <p style="display:flex;gap:var(--s-3);flex-wrap:wrap"><a class="btn btn-primary" href="/">Go to the home page</a><a class="btn" href="/demo/">Open the replay</a></p>
+      <p style="display:flex;gap:var(--s-3);flex-wrap:wrap"><a class="btn btn-primary" href="/">Back to the mission</a><a class="btn btn-glass" href="/demo/">Open the replay</a></p>
     </div>
   </section>
 </Base>
+<style>
+  .lost { position: relative; min-height: 100svh; display: flex; align-items: center; isolation: isolate; overflow: hidden; }
+  .lost :global(.media) { z-index: -1; }
+  .lost .wrap { padding-block: var(--nav-h) var(--s-8); }
+</style>

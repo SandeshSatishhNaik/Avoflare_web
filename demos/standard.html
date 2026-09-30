@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVOFLARE · The category standard (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --white: #ffffff; --ink: #111418; --ink-2: #5b636d; --blue: #087cdb; --mist: #eef1f4; --line: #dfe3e8; --warm: #e8742c;
+    --sans: 'Geist', system-ui, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--white); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  .wrap { width: min(100% - 2 * clamp(1rem, 3vw, 3rem), 1320px); margin-inline: auto; }
+  img, video, svg { display: block; max-width: 100%; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .nav { position: fixed; top: 14px; left: 50%; translate: -50% 0; z-index: 20; width: min(100% - 24px, 1300px); display: flex; align-items: center; gap: 28px; padding: 10px 10px 10px 20px; border-radius: 12px;
+    background: rgba(17,20,24,.35); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border: 1px solid rgba(255,255,255,.2); color: #fff; transition: background .4s, color .4s; }
+  .nav.solid { background: rgba(255,255,255,.75); color: var(--ink); border-color: var(--line); }
+  .nav b { font-weight: 800; letter-spacing: .2em; font-size: 14px; }
+  .nav ul { list-style: none; display: flex; gap: 24px; margin: 0 0 0 auto; padding: 0; font-size: 14px; }
+  .nav a { color: inherit; text-decoration: none; opacity: .85; }
+  .nav .cta { background: var(--blue); color: #fff; opacity: 1; padding: 10px 16px; border-radius: 8px; font-weight: 600; }
+  @media (max-width: 760px) { .nav ul { display: none; } .nav .cta { margin-left: auto; } }
+
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: end; color: #fff; overflow: hidden; }
+  .hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.15) saturate(.9); transform: scale(1.04); animation: settle 12s var(--ease) forwards; }
+  @keyframes settle { to { transform: scale(1); } }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(17,20,24,.25), rgba(17,20,24,0) 35%, rgba(17,20,24,.55)); }
+  .hero .inner { position: relative; z-index: 2; padding-bottom: 9vh; }
+  h1 { font-size: clamp(3rem, 1.4rem + 6vw, 7.4rem); line-height: .94; letter-spacing: -0.045em; font-weight: 700; margin: 0; max-width: 12ch; }
+  .sub { font-size: clamp(1.1rem, 1rem + .4vw, 1.35rem); max-width: 44ch; margin: 20px 0 28px; opacity: .92; }
+  .btn { display: inline-flex; align-items: center; min-height: 50px; padding: 0 22px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: transform .3s var(--ease); }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-glass { color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(8px); margin-left: 8px; }
+  .credit { position: absolute; right: 24px; bottom: 20px; z-index: 2; font-size: 12px; opacity: .75; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); border-bottom: 1px solid var(--line); }
+  @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stats div { padding: 44px 24px 40px 0; }
+  .stats b { display: block; font-size: clamp(2.6rem, 2rem + 2vw, 4rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+  .stats span { color: var(--ink-2); font-size: 15px; }
+
+  .split { display: grid; gap: 48px; padding: 110px 0; align-items: center; }
+  @media (min-width: 1000px) { .split { grid-template-columns: 1fr 1fr; } .split.flip > :first-child { order: 2; } }
+  .split .img { border-radius: 16px; overflow: hidden; aspect-ratio: 5 / 4; }
+  .split .img img { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.2); transition: transform 1.4s var(--ease); }
+  .split .img:hover img { transform: scale(1.04); }
+  h2 { font-size: clamp(2.2rem, 1.4rem + 2.8vw, 4rem); line-height: 1; letter-spacing: -0.04em; font-weight: 700; margin: 0 0 18px; max-width: 16ch; }
+  p.body { color: var(--ink-2); max-width: 52ch; margin: 0 0 22px; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--mist); color: var(--ink-2); }
+  .link { color: var(--blue); font-weight: 600; text-decoration: none; }
+
+  .chartband { background: var(--mist); padding: 110px 0; }
+  .chartcard { background: #fff; border-radius: 16px; padding: 28px; border: 1px solid var(--line); margin-top: 32px; }
+  .chartcard svg { width: 100%; height: auto; }
+  .note { font-size: 13px; color: var(--ink-2); margin-top: 10px; }
+
+  .cta-band { position: relative; min-height: 70svh; display: grid; place-items: center; text-align: center; color: #fff; overflow: hidden; }
+  .cta-band img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(1.1); }
+  .cta-band::after { content: ''; position: absolute; inset: 0; background: rgba(17,20,24,.35); }
+  .cta-band .in { position: relative; z-index: 2; }
+  .cta-band h2 { margin-inline: auto; }
+
+  .about { margin: 80px auto; padding: 26px 28px; border-radius: 16px; background: var(--mist); }
+  .about h3 { margin: 0 0 8px; }
+  .about ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
+  .back { position: fixed; left: 16px; bottom: 16px; z-index: 30; font: 600 13px var(--sans); padding: 10px 16px; border-radius: 999px; background: rgba(255,255,255,.8); backdrop-filter: blur(10px); border: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .hero video { animation: none; } }
+</style>
+</head>
+<body>
+<nav class="nav" id="nav" aria-label="Demo navigation"><b>AVOFLARE</b><ul><li><a href="#system">System</a></li><li><a href="#fault">Fault response</a></li><li><a href="#data">Data</a></li></ul><a class="cta" href="#data">Open the replay</a></nav>
+
+<header class="hero">
+  <video src="../public/media/v/reel-runway.mp4" poster="../public/media/v/reel-runway.webp" autoplay muted loop playsinline aria-hidden="true"></video>
+  <div class="wrap inner">
+    <h1 class="reveal">Engine health that survives a lost link.</h1>
+    <p class="sub reveal">An AI-enabled digital twin for the piston engine of a MALE UAV. It detects faults on board and builds the engineer's case on the ground.</p>
+    <div class="reveal"><a class="btn btn-blue" href="#data">See the fault develop</a><a class="btn btn-glass" href="#system">How it works</a></div>
+  </div>
+  <p class="credit">AI-generated illustration · simulated data</p>
+</header>
+
+<main>
+  <div class="wrap stats">
+    <div class="reveal"><b class="num">52</b><span>fault types in the simulation library</span></div>
+    <div class="reveal"><b class="num">10</b><span>mission profiles, hot to high altitude</span></div>
+    <div class="reveal"><b class="num">17</b><span>CAN message IDs encoded and decoded</span></div>
+    <div class="reveal"><b class="num">2 h</b><span>mission replay with its healthy twin</span></div>
+  </div>
+
+  <div class="wrap split" id="system">
+    <div class="img reveal"><img src="../public/media/img/clouds-sunset-1200.webp" alt="Illustration of the UAV above the clouds" /></div>
+    <div class="reveal"><span class="tag">On the aircraft · designed</span><h2>Decides on board. Keeps deciding offline.</h2><p class="body">CAN telemetry flows through ETPR into one CanonicalTelemetryState. The Edge AI chain, from a physics-informed twin to a safety layer, keeps judging the engine even when the downlink drops.</p><a class="link" href="#">How it works →</a></div>
+  </div>
+  <div class="wrap split flip" id="fault">
+    <div class="img reveal"><img src="../public/media/img/station-1200.webp" alt="Illustration of the ground control station at night" /></div>
+    <div class="reveal"><span class="tag">On the ground · designed</span><h2>A case, not an alarm.</h2><p class="body">GCS AI builds the engineering case: divergence from the baseline, candidate causes, evidence, prognosis and a proposed action. A human engineer keeps final authority.</p><a class="link" href="#">Fault response →</a></div>
+  </div>
+
+  <section class="chartband" id="data">
+    <div class="wrap">
+      <h2 class="reveal">One hour in, the exhaust runs warm.</h2>
+      <p class="body reveal">A simulated turbocharger compressor wears during a two-hour mission. Exhaust gas pulls away from the healthy twin by up to <strong>+10.6 °C</strong>.</p>
+      <div class="chartcard reveal"><svg id="chart" viewBox="0 0 1000 340" role="img" aria-label="EGT above the healthy twin over the mission"></svg><p class="note">Simulated · TAPAS V4 run, wear 50 %. Dashed: healthy twin. Watch and flag bands are illustrative.</p></div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <img src="../public/media/img/runway-night-1200.webp" alt="" />
+    <div class="in wrap"><h2>See the fault before it grounds the aircraft.</h2><a class="btn btn-blue" href="#data">Open the replay</a></div>
+  </section>
+
+  <div class="wrap"><div class="about">
+    <h3>About this direction · The category standard</h3>
+    <ul>
+      <li>World: what the best UAV and aviation companies ship today (Skydio, Heart Aerospace, Joby): full-bleed footage, huge grotesk headline, stat row, alternating image and text, one blue.</li>
+      <li>Colours: white, ink, mist grey, one confident blue. Glass: the navigation bar only.</li>
+      <li>Type: Geist and Geist Mono. Motion: slow hero settle, fade-up reveals, image zoom on hover.</li>
+      <li>Strength: instantly credible. Risk: it looks like everyone else in the category, by design.</li>
+    </ul>
+  </div></div>
+</main>
+<a class="back" href="index.html">← All five demos</a>
+
+<script src="data.js"></script>
+<script>
+const S = window.AV.s.map(r => ({ t: r[0], d: r[1] }));
+const nav = document.getElementById('nav');
+addEventListener('scroll', () => nav.classList.toggle('solid', scrollY > innerHeight * .8), { passive: true });
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .15 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+(() => {
+  const W = 1000, H = 340, L = 40, R = 16, T = 16, B = 32, X = t => L + t / 7200 * (W - L - R), Y = v => T + (1 - v / 12) * (H - T - B);
+  let g = `<rect x="${L}" y="${Y(12)}" width="${W - L - R}" height="${Y(6) - Y(12)}" fill="rgba(232,116,44,.08)" />`;
+  for (let v = 0; v <= 12; v += 3) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#dfe3e8" /><text x="${L - 8}" y="${Y(v) + 4}" font-size="12" font-family="Geist Mono" fill="#5b636d" text-anchor="end">${v}</text>`;
+  for (let t = 0; t <= 7200; t += 1800) g += `<text x="${X(t)}" y="${H - 8}" font-size="12" font-family="Geist Mono" fill="#5b636d" text-anchor="middle">${t / 3600} h</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="#087cdb" stroke-width="2" stroke-dasharray="7 6" />`;
+  g += `<polyline points="${S.map(s => `${X(s.t).toFixed(1)},${Y(s.d).toFixed(1)}`).join(' ')}" fill="none" stroke="#111418" stroke-width="2.6" />`;
+  chart.innerHTML = g;
+})();
+</script>
+</body>
+</html>
