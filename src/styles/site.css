@@ -1034,3 +1034,5 @@
     .layer i, .cue i, .status::before, .chip-top b::before, .sensor::after { animation: none; }
     html { scroll-behavior: auto; }
   }
+  .fin-by a { display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.35); padding-bottom: 1px; transition: border-color .3s, color .3s; }
+  .fin-by a:hover, .fin-by a:focus-visible { color: #cfe3f4; border-color: #cfe3f4; } .fin-by svg { width: 13px; height: 13px; }
