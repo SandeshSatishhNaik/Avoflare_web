@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-// Media, brand files and the OG image are shared with the rest of the repo in ../public.
 // When MEDIA_BASE is set (for example the public URL of the R2 bucket), every "/media/..." path is
 // rewritten to "<MEDIA_BASE>/media/..." at build time and the media folder is left out of dist,
 // so images and videos are served from R2 instead of Pages. Without it, media ship with the site.
@@ -27,8 +26,6 @@ function mediaFromR2() {
 
 export default defineConfig({
   plugins: [react(), MEDIA_BASE && mediaFromR2()],
-  publicDir: '../public',
-  server: { fs: { allow: ['..'] } },
   build: {
     rollupOptions: {
       input: { main: resolve(import.meta.dirname, 'index.html'), how: resolve(import.meta.dirname, 'how-it-works.html') },

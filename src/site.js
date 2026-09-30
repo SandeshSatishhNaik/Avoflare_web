@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import { AV } from './data/av.js';
 import { initHero } from './hero.js';
-import builtData from '../../src/data/built.json';
+import builtData from './data/built.json';
 
 export function initSite() {
 window.AV = AV; window.gsap = gsap; window.SplitText = SplitText; window.Lenis = Lenis;
