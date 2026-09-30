@@ -1,6 +1,11 @@
 # Build the React site (site/) and publish it to Cloudflare Pages on every push to main.
 # Needs repository secrets CLOUDFLARE_API_TOKEN (Pages: Edit) and CLOUDFLARE_ACCOUNT_ID.
 # Optional repository variable CF_PAGES_PROJECT (defaults to "avoflare").
+# Media on R2: set secrets R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY (an R2 API token with
+# Object Read & Write on the bucket) and the variable MEDIA_BASE (the bucket's public URL,
+# e.g. https://pub-xxxx.r2.dev or https://media.your-domain). Then public/media is synced to
+# the bucket under media/ and the site loads every image and video from there.
+# Optional variable R2_BUCKET (defaults to "avoflare").
 name: Deploy to Cloudflare Pages
 
 on:
@@ -29,8 +34,21 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
 
+      - name: Sync media to R2
+        if: ${{ vars.MEDIA_BASE != '' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          aws s3 sync public/media "s3://${{ vars.R2_BUCKET || 'avoflare' }}/media"             --endpoint-url "https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"             --exclude "PROVENANCE.md" --cache-control "public, max-age=604800" --only-show-errors
+
       - name: Build
         working-directory: site
+        env:
+          MEDIA_BASE: ${{ vars.MEDIA_BASE }}
         run: |
           npm ci
           npm run build
